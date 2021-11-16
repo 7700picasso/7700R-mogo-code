@@ -198,11 +198,27 @@ void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont u
 
 //wow maybe the auton code,this auton is the right side auton,work in progress but works how is 
 void auton() {
-  claw.set(true); //open claw
+  mogo(-100,1200);
+  mogo(0, 0);
+  inchDrive(-17, 100);
+  mogo(100, 1500);
+  picasso.set(true);
+  mogo(0, 0);
+  inchDrive(8, 100);
+  gyroturn(94);
+  claw.set(true);
+  inchDrive(57, 100);
+  claw.set(false);
+  inchDrive(-10, 100);
+  gyroturn(140);
+  lift(100, 1700);
+  inchDrive(42,100);
+  lift(0,0);
+  claw.set(true);
+  inchDrive(-10,100);
+  /*claw.set(true); //open claw
   wait(100, msec);//wait
-  inchDrive(55, 100);//go forward 55 inches
- Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
-  Brain.Screen.print("I'm dumb");//this shows the code works 
+  inchDrive(10, 100);//go forward 55 inches
   claw.set(false);//close claw,just picked up that yellow mogo
   wait (20, msec);//wait dumbass
   inchDrive(-30, 100);//go backwards 30 inches
@@ -215,7 +231,7 @@ void auton() {
   picasso.set(true);//picasso stupid so again to make sure,fr this fixed it lol
   mogo(-100,1200);//mogo back down and ready for driver
    gyroturn(90);//turn facing the field 
-
+  */
 
 
 
