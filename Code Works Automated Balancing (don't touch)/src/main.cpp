@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       Sean and Jaehoon  and Saif                                                     */
+/*    Author:       Sean and Jaehoon                                                       */
 /*    Created:      sometime                                           */
-/*    Description:  7700R code 2021-2022  Skills                             */
+/*    Description:  7700R code 2021-2022                              */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 //7700R
@@ -27,8 +27,7 @@
 // lift1                motor         1               
 // backHook             digital_out   H               
 // claw                 digital_out   G               
-// Inertial21           inertial      21              
-// picasso              digital_out   A              
+// picasso              digital_out   A               
 // Gyro                 inertial      20              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
@@ -129,16 +128,15 @@ void picassos (bool open)
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(float target, int speed){
-  leftDrive1.setPosition(0,  rev);
-    leftDrive2.setPosition(0,  rev);//might only need 1 of 3 of these but im a dumbass so leave it 
-  leftmiddle.setPosition(0,  rev);
-  float inches = 0.0;
-  float turns= 0.0;
-  float error = target; 
-  float olderror = error; 
-  float kp=10;
-  float kd = 20.0;
+void bal(float target, int speed){
+  int setpoint;
+setpoint = -600;
+float error;
+float power;
+float kP;
+kP = 0.0289996;
+
+
   
   //dont use the drive function you dumbass
   //use inchdrive,this took me a while to code :(
@@ -149,22 +147,25 @@ void inchDrive(float target, int speed){
 
 
   while(fabs(error)>1.0){
-    //did this late at night but this while is important 
-   //fabs = absolute value
-    //heading= Gyro.rotation(degrees);
-  drive(speed, speed, 10);
-      turns =leftmiddle.position(rev);
-    inches = turns * Diameter * pi;   //took and hour to fix this I think,was off by like 10 inches lol
-    olderror=error;
-    error = target-inches; //the error gets smaller when u reach ur target
- //inches = turns * Diameter * pi;
-    
-    speed = kp*error+kd*(error-olderror); //big error go fast slow error go slow 
+    error = setpoint - Gyro 
+	power = error*kP;
+	if(power > 127)
+	{
+		power = 127;
+	}
+	if(power < -127)
+	{                                 //stuff math this stuff is hard lol
+		power = 127;
+	}
+leftDrive1 = power;
+leftDrive2 = power;
+leftmiddle = power;
+rightDrive1 = power;
+rightDrive2 = power;
+rightmiddle = power;
 
-    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", turns); //math fun
-    Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
-     Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
-     Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
+leftDrive1.spin(fwd, (2*Gyro.pitch()), pct);   //test for self balance 
+    
   }
    
   drive(0,0,0);
@@ -196,27 +197,10 @@ void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont u
 }
 
 
-//This auton is the skills auton,not fully tested
 void auton() {
-  mogo(-100,1200);
-  mogo(0, 0);
-  inchDrive(-17, 100);
-  mogo(100, 1500);
-  picasso.set(true);
-  mogo(0, 0);
-  inchDrive(8, 100);
-  gyroturn(94);
-  claw.set(true);
-  inchDrive(57, 100);
-  claw.set(false);
-  inchDrive(-10, 100);
-  gyroturn(140);
-  lift(100, 1700);
-  inchDrive(42,100);
-  lift(0,0);
-  claw.set(true);
-  inchDrive(-10,100);
  
+//blank for now
+
 
 
 
@@ -235,7 +219,7 @@ void auton() {
 }
 
 //driver controls,dont change unless your jaehoon or sean
-void driver() {
+void driver() {                                                               //might but balancing code here
   // User control code here, inside the loop
   //2 joy sticks
   //rstick is axis 2 and lstick is axis 3,why its 2,3 and not 1,2 idk ask vex

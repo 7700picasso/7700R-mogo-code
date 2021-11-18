@@ -14,7 +14,6 @@ extern motor amogus;
 extern motor lift1;
 extern digital_out backHook;
 extern digital_out claw;
-extern inertial Inertial21;
 extern digital_out picasso;
 extern inertial Gyro;
 
