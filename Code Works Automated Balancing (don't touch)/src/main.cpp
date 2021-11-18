@@ -155,6 +155,7 @@ kP = 0.0289996;
 	}
 	if(power < -127)
 	{                                 //stuff math this stuff is hard lol
+// simply pid with pitch from the inertial sensor as input
 		power = 127;
 	}
 leftDrive1 = power;
