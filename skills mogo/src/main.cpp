@@ -215,7 +215,17 @@ void auton() {
   inchDrive(42,100);
   lift(0,0);
   claw.set(true);
-  inchDrive(-10,100);
+  inchDrive(-22,100);
+  gyroturn(-105);
+  lift(-100, 1500);
+  inchDrive(27, 100);
+  claw.set(false);
+  inchDrive(-10, 100);
+  gyroturn(110);
+  lift(100,1700);
+  inchDrive(30,100);
+  claw.set(true);
+  lift(0, 0);
   /*claw.set(true); //open claw
   wait(100, msec);//wait
   inchDrive(10, 100);//go forward 55 inches
