@@ -171,7 +171,38 @@ void inchDrive(float target, int speed){
   }
 //if gyro needs calibrating add a 10ms wait or something
  
+void breakdrive()
+{
+leftDrive1.stop(brake);
+leftDrive2.stop(brake);
+rightDrive1.stop(brake);
+rightDrive2.stop(brake);
 
+}
+void balance()
+{
+ float pitch=Gyro.pitch(deg);
+ float oldpitch=pitch;
+ inchDrive(10, 100);
+     Brain.Screen.clearScreen();
+     float kp=1;
+      float kd = 20.0;
+
+float d=0.5;
+while(fabs(pitch)>d)
+{
+  float speed = kp*pitch+kd*(pitch-oldpitch);
+  drive(speed, speed, 10);
+  oldpitch=pitch;
+    pitch = Gyro.pitch(deg);
+    Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
+
+}
+breakdrive();
+Brain.Screen.printAt(1, 150, "i am done ");
+
+}
+ 
 void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
  float kp=2.0;
  float kd = 16.0;
@@ -205,7 +236,7 @@ void auton() {
   picasso.set(true);
   mogo(0, 0);
   inchDrive(8, 100);
-  gyroturn(94);
+  gyroturn(90);
   claw.set(true);
   inchDrive(57, 100);
   claw.set(false);
@@ -215,7 +246,6 @@ void auton() {
   inchDrive(42,100);
   lift(0,0);
   claw.set(true);
-<<<<<<< HEAD:skills mogo/src/main.cpp
   inchDrive(-22,100);
   gyroturn(-105);
   lift(-100, 1500);
@@ -227,27 +257,9 @@ void auton() {
   inchDrive(30,100);
   claw.set(true);
   lift(0, 0);
-  /*claw.set(true); //open claw
-  wait(100, msec);//wait
-  inchDrive(10, 100);//go forward 55 inches
-  claw.set(false);//close claw,just picked up that yellow mogo
-  wait (20, msec);//wait dumbass
-  inchDrive(-30, 100);//go backwards 30 inches
- gyroturn(-90); //turn 90 degress with the robots back facing the right side mogo
-  inchDrive(10,100);//drive forward 10 inches to align and have time for the mogo to go down
-  mogo(-100,1200);//mogo goes down
-  inchDrive(-25,100);//drive backwards 25 inches to mogo
-  mogo(100,3000);//pikup mogo
-  picasso.set(true);//picasso that mogo
-  picasso.set(true);//picasso stupid so again to make sure,fr this fixed it lol
-  mogo(-100,1200);//mogo back down and ready for driver
-   gyroturn(90);//turn facing the field 
-  */
-
-=======
   inchDrive(-10,100);
+  
  
->>>>>>> 95a22b30299e968da5d4b372f1b770fbcd17a5e6:Skiils Auton Mogo/src/main.cpp
 
 
 
