@@ -40,8 +40,8 @@ using namespace vex;
 competition Competition;
 
 // define your global Variables here
-float pi=3.14;
-float Diameter = 3.25;
+double pi=3.14;
+double Diameter = 3.25;
 
 //dont touch
 //Diameter is the wheel
@@ -130,16 +130,16 @@ void picassos (bool open)
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(float target, int speed){
+void inchDrive(double target, int speed){
   leftDrive1.setPosition(0,  rev);
     leftDrive2.setPosition(0,  rev);//might only need 1 of 3 of these but im a dumbass so leave it 
   leftmiddle.setPosition(0,  rev);
-  float inches = 0.0;
-  float turns= 0.0;
-  float error = target; 
-  float olderror = error; 
-  float kp=10;
-  float kd = 20.0;
+  double inches = 0.0;
+  double turns= 0.0;
+  double error = target; 
+  double olderror = error; 
+  double kp=10;
+  double kd = 20.0;
   
   //dont use the drive function you dumbass
   //use inchdrive,this took me a while to code :(
@@ -190,17 +190,17 @@ rightDrive2.stop(coast);
 }
 void balance()
 {
- float pitch=Gyro.pitch(deg);
- float oldpitch=pitch;
+ double pitch=Gyro.pitch(deg);
+ double oldpitch=pitch;
  inchDrive(10, 100);
      Brain.Screen.clearScreen();
-     float kp=1;
-      float kd = 20.0;
+     double kp=1;
+      double kd = 20.0;
 
-float d=0.5;
+double d=0.5;
 while(fabs(pitch)>d)
 {
-  float speed = kp*pitch+kd*(pitch-oldpitch);
+  double speed = kp*pitch+kd*(pitch-oldpitch);
   drive(speed, speed, 10);
   oldpitch=pitch;
     pitch = Gyro.pitch(deg);
@@ -212,23 +212,26 @@ Brain.Screen.printAt(1, 150, "i am done ");
 
 }
  
-void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
- float kp=2.0;
- float kd = 16.0;
-  Gyro.setRotation(0, degrees); //centers,calibrates gyro to 0
-  float heading = 0.0;
-  float speed = 100;
-  float error = target;
-  float olderror=error;
-  while(fabs(error)>2.0){ //fabs = absolute value while loop again
-    heading= Gyro.rotation(degrees);
-    olderror=error;
-    error = target-heading; //error gets smaller closer you get,robot slows down
+void gyroturn(double target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+  double kp = 1.25; // was 2.0
+  double kd = 1.0; // was 16.0
+ 
+  double heading = Gyro.rotation(deg);
+  double speed = 100;
+  double error = heading;
+  double olderror = error;
+
+  target += heading;
+  while(fabs(error) > 1.25){ //fabs = absolute value while loop again
+    heading = Gyro.rotation(degrees);
+    error = target - heading; //error gets smaller closer you get,robot slows down
     drive(speed, -speed, 10);
     speed = kp*error+kd*(error-olderror); //big error go fast slow error go slow 
     Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", heading); //math thing again,2 decimal places
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     //all ths print screen helps test to make sure gyro not broke
+    wait(10, msec);
+    olderror = error;
   }
   drive(0,0,0);
   heading= Gyro.rotation(degrees);//prints the gyro rotation degress
@@ -238,6 +241,8 @@ void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont u
 
 //This auton is the skills auton,not fully tested
 void auton() {
+  double facing = 0, nextDir, firstTurn = 90, offset = 93 - firstTurn; // next dir is the rotation
+  Gyro.setRotation(0, deg);
   breakdrive(); // set motors to brake
   mogo(-100,1200);
   mogo(0, 0);
@@ -246,29 +251,41 @@ void auton() {
   picasso.set(true);
   mogo(0, 0);
   inchDrive(8, 100);
-  gyroturn(93);
+  nextDir = firstTurn;
+  gyroturn(nextDir - Gyro.rotation(deg));
+  facing += nextDir;
   claw.set(true);
   inchDrive(55, 100);
   claw.set(false);
   inchDrive(-10, 100);
-  gyroturn(140);
+  nextDir = 140;
+  gyroturn(nextDir + facing - Gyro.rotation(deg));
+  facing += nextDir;
   lift(100, 1700);
   inchDrive(38,100);
   lift(0,0);
   claw.set(true);
   inchDrive(-22,100);
-  gyroturn(-110);
+  nextDir = -110;
+  gyroturn(nextDir + facing - Gyro.rotation(deg));
+  facing += nextDir;
   lift(-100, 1500);
   inchDrive(27, 100);
   claw.set(false);
   inchDrive(-10, 100);
-  gyroturn(123);
+  nextDir = 123;
+  gyroturn(nextDir + facing - Gyro.rotation(deg));
+  facing += nextDir;
   lift(100,1700);
   inchDrive(34,100);
+  lift(-10,400);
   claw.set(true);
+  lift(10, 400);
   lift(0, 0);
   inchDrive(-30,100);
-  gyroturn(100);
+  nextDir = 100;
+  gyroturn(nextDir + facing - Gyro.rotation(deg));
+  facing += nextDir;
   mogo(-100,1200);
   mogo(0, 0);
   inchDrive( -40, 100);
