@@ -51,6 +51,7 @@ float Diameter = 3.25;
 
 void pre_auton(void) {
   vexcodeInit();
+  Gyro.calibrate();
   wait(2000, msec);
 
   // All activities that occur before the competition starts
@@ -169,7 +170,7 @@ void inchDrive(float target, int speed){
    
   drive(0,0,0);
   }
-//if gyro needs calibrating add a 10ms wait or something
+//if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
  
 void breakdrive()
 {
@@ -177,6 +178,14 @@ leftDrive1.stop(brake);
 leftDrive2.stop(brake);
 rightDrive1.stop(brake);
 rightDrive2.stop(brake);
+
+}
+void coastdrive()
+{
+leftDrive1.stop(coast);
+leftDrive2.stop(coast);
+rightDrive1.stop(coast);
+rightDrive2.stop(coast);
 
 }
 void balance()
@@ -229,6 +238,7 @@ void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont u
 
 //This auton is the skills auton,not fully tested
 void auton() {
+  breakdrive(); // set motors to brake
   mogo(-100,1200);
   mogo(0, 0);
   inchDrive(-17, 100);
@@ -236,28 +246,35 @@ void auton() {
   picasso.set(true);
   mogo(0, 0);
   inchDrive(8, 100);
-  gyroturn(90);
+  gyroturn(93);
   claw.set(true);
-  inchDrive(57, 100);
+  inchDrive(55, 100);
   claw.set(false);
   inchDrive(-10, 100);
   gyroturn(140);
   lift(100, 1700);
-  inchDrive(42,100);
+  inchDrive(38,100);
   lift(0,0);
   claw.set(true);
   inchDrive(-22,100);
-  gyroturn(-105);
+  gyroturn(-110);
   lift(-100, 1500);
   inchDrive(27, 100);
   claw.set(false);
   inchDrive(-10, 100);
-  gyroturn(110);
+  gyroturn(123);
   lift(100,1700);
-  inchDrive(30,100);
+  inchDrive(34,100);
   claw.set(true);
   lift(0, 0);
-  inchDrive(-10,100);
+  inchDrive(-30,100);
+  gyroturn(100);
+  mogo(-100,1200);
+  mogo(0, 0);
+  inchDrive( -40, 100);
+  mogo(100, 1500);
+  mogo(0, 0);
+
   
  
 
@@ -282,6 +299,7 @@ void driver() {
   // User control code here, inside the loop
   //2 joy sticks
   //rstick is axis 2 and lstick is axis 3,why its 2,3 and not 1,2 idk ask vex
+  coastdrive(); // set drive motors to coast
   while (true) {
     int rstick=Controller1.Axis2.position();
     int lstick=Controller1.Axis3.position();
