@@ -28,8 +28,8 @@
 // backHook             digital_out   H               
 // claw                 digital_out   G               
 // Inertial21           inertial      21              
-// picasso              digital_out   A              
-// Gyro                 inertial      20              
+// picasso              digital_out   A               
+// Gyro                 inertial      19              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -87,19 +87,17 @@ void lift(int speed, int wt ){
 
 
 
-void mogo (int speed, int wt){
+void mogo (int speed, int wt, bool stop = true){
   amogus.spin(forward, speed, pct);
-  
-  
   wait(wt, msec);
+  if (stop) {
+    amogus.spin(forward, 0, pct);
+  }
 }
 //makes mogo go up or down
 // its the lift speed then wait time
 //example mogo(-100,1200);  so mogo 100% for 1200 msc
 // 100 is up and -100 is down,I know this 
-
-
-
 
 
 void clawopen (bool open)
@@ -190,7 +188,7 @@ rightDrive2.stop(coast);
 }
 void balance()
 {
- double pitch=Gyro.pitch(deg);
+ double pitch=Gyro.pitch(degrees);
  double oldpitch=pitch;
  inchDrive(10, 100);
      Brain.Screen.clearScreen();
@@ -203,7 +201,7 @@ while(fabs(pitch)>d)
   double speed = kp*pitch+kd*(pitch-oldpitch);
   drive(speed, speed, 10);
   oldpitch=pitch;
-    pitch = Gyro.pitch(deg);
+    pitch = Gyro.pitch(degrees);
     Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
 
 }
@@ -212,16 +210,18 @@ Brain.Screen.printAt(1, 150, "i am done ");
 
 }
  
-void gyroturn(double target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double kp = 1.25; // was 2.0
   double kd = 1.0; // was 16.0
  
-  double heading = Gyro.rotation(deg);
+  double heading = Gyro.rotation(degrees);
   double speed = 100;
   double error = heading;
   double olderror = error;
-
-  target += heading;
+  
+  idealDir += target;
+  target = heading + idealDir - Gyro.rotation(degrees);
+  
   while(fabs(error) > 1.25){ //fabs = absolute value while loop again
     heading = Gyro.rotation(degrees);
     error = target - heading; //error gets smaller closer you get,robot slows down
@@ -241,74 +241,55 @@ void gyroturn(double target){ //idk maybe turns the robot with the gyro,so dont 
 
 //This auton is the skills auton,not fully tested
 void auton() {
-  double facing = 0, nextDir, firstTurn = 90, offset = 93 - firstTurn; // next dir is the rotation
-  Gyro.setRotation(0, deg);
+
+  double facing = 0;
+
+  while (Gyro.isCalibrating()) { // dont start until gyro is calibrated
+    wait(10, msec);
+  }
+
+  Gyro.setRotation(0, degrees);
+
   breakdrive(); // set motors to brake
-  mogo(-100,1200);
-  mogo(0, 0);
+  mogo(-100, 1200);
   inchDrive(-17, 100);
-  mogo(100, 1500);
+  mogo(100, 1500, false);
   picasso.set(true);
   mogo(0, 0);
   inchDrive(8, 100);
-  nextDir = firstTurn;
-  gyroturn(nextDir - Gyro.rotation(deg));
-  facing += nextDir;
+  gyroturn(90, facing);
   claw.set(true);
   inchDrive(55, 100);
   claw.set(false);
   inchDrive(-10, 100);
-  nextDir = 140;
-  gyroturn(nextDir + facing - Gyro.rotation(deg));
-  facing += nextDir;
+  gyroturn(140, facing);
   lift(100, 1700);
   inchDrive(38,100);
-  lift(0,0);
+  lift(-60,400);
   claw.set(true);
+  lift(60, 400);
   inchDrive(-22,100);
-  nextDir = -110;
-  gyroturn(nextDir + facing - Gyro.rotation(deg));
-  facing += nextDir;
+  gyroturn(-100, facing);
   lift(-100, 1500);
-  inchDrive(27, 100);
+  inchDrive(28, 100);
   claw.set(false);
   inchDrive(-10, 100);
-  nextDir = 123;
-  gyroturn(nextDir + facing - Gyro.rotation(deg));
-  facing += nextDir;
+  gyroturn(125, facing);
   lift(100,1700);
-  inchDrive(34,100);
-  lift(-10,400);
+  inchDrive(36, 100);
+  lift(-60,400);
   claw.set(true);
-  lift(10, 400);
+  lift(60, 400);
   lift(0, 0);
   inchDrive(-30,100);
-  nextDir = 100;
-  gyroturn(nextDir + facing - Gyro.rotation(deg));
-  facing += nextDir;
+  gyroturn(90, facing);
   mogo(-100,1200);
-  mogo(0, 0);
   inchDrive( -40, 100);
   mogo(100, 1500);
-  mogo(0, 0);
-
-  
- 
-
-
-
-
-  
-  
-
-
-
-
-
-
-
-
-
+  gyroturn(-100, facing);
+  lift(-100, 1500);
+  inchDrive(20, 100);
+  claw.set(false);
 }
 
 //driver controls,dont change unless your jaehoon or sean
