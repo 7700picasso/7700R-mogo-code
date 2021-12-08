@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       Sean and Jaehoon  and Saif                                                     */
+/*    Author:       Sean Jaehoon and Saif                                                     */
 /*    Created:      sometime                                           */
 /*    Description:  7700R code 2021-2022  Skills                             */
-/*               saif 12-1-21                                                             */
+/*               saif 12-6-21                                                             */
 /*----------------------------------------------------------------------------*/
 //7700R
 //Sean
@@ -96,7 +96,7 @@ void mogo (int speed, int wt, bool stop = true){
 }
 //makes mogo go up or down
 // its the lift speed then wait time
-//example mogo(-100,1200);  so mogo 100% for 1200 msc
+//mogo(100, 1500, false);  so mogo 100% for 1500 msc with some werid stop thing
 // 100 is up and -100 is down,I know this 
 
 
@@ -169,6 +169,7 @@ void inchDrive(double target, int speed){
   drive(0,0,0);
   }
 //if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
+//1 sec if your good
  
 void breakdrive()
 {
@@ -176,20 +177,20 @@ leftDrive1.stop(brake);
 leftDrive2.stop(brake);
 rightDrive1.stop(brake);
 rightDrive2.stop(brake);
-
+//break code for the gryo balance code
 }
 void coastdrive()
 {
 leftDrive1.stop(coast);
 leftDrive2.stop(coast);
-rightDrive1.stop(coast);
-rightDrive2.stop(coast);
+rightDrive1.stop(coast); //coast drive
+rightDrive2.stop(coast); //saif put notes here with examples 
 
 }
 void balance()
 {
  double pitch=Gyro.pitch(degrees);
- double oldpitch=pitch;
+ double oldpitch=pitch;                //work in progress code
  inchDrive(10, 100);
      Brain.Screen.clearScreen();
      double kp=1;
@@ -209,7 +210,7 @@ breakdrive();
 Brain.Screen.printAt(1, 150, "i am done ");
 
 }
- 
+ //modded gyro code, sadge
 void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double kp = 1.25; // was 2.0
   double kd = 1.0; // was 16.0
@@ -256,7 +257,7 @@ void auton() {
   mogo(100, 1500, false);
   picasso.set(true);
   mogo(0, 0);
-  inchDrive(8, 100);
+  inchDrive(8, 100);                       //please put notes for all functions in this auton for troubleshooting 
   gyroturn(90, facing);
   claw.set(true);
   inchDrive(55, 100);
