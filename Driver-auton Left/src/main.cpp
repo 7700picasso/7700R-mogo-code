@@ -316,32 +316,31 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
 
 //wow maybe the auton code,this auton is the left side auton,works well
 void auton() {
-  claw.set(true); //open claw
-  wait(100, msec);//wait
-  inchDrive(55, 100);//go forward 55 inches
-  Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
-  Brain.Screen.print("I'm dumb");//this shows the code works 
-  claw.set(false);//close claw,just picked up that yellow mogo
-  wait (20, msec);//wait dumbass
-  inchDrive(-55, 100);//go backwards 30 inches
- 
 
+  double facing = 0;
 
-
-
-
-
-  
-  
-
-
-
-
-
-
-
-
-
+  // PICCASO FIRST ALLIANCE GOAL
+  mogo(-100, 1200);
+  inchDrive(-17);
+  mogo(100, 1500, false);
+  picasso.set(true);
+  mogo(0, 0);
+  inchDrive(8);                       //please put notes for all functions in this auton for troubleshooting 
+  // GRAB FIRST NEUTRAL GOAL
+  gyroturn(-90, facing);
+  mogo2(-95, 100, 0);
+  inchDrive(-57);
+  mogo2(30);
+  // GRAB SECOND NEUTRAL GOAL
+  claw.set(true); // open claw
+  gyroturn(-90, facing);
+  inchDrive(1.5 * UNITSIZE);
+  claw.set(false); // close claw
+  lift2(45, 100, 0); // lift it up to bring it off of an enemy lift
+  // go home
+  gyroturn(45, facing);
+  inchDrive(3 * UNITSIZE);
+  gyroturn(45, facing); // face away from field.
 }
 
 //driver controls,dont change unless your jaehoon or sean
