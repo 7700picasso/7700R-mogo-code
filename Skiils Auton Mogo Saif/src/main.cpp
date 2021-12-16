@@ -355,15 +355,17 @@ void auton() {
   inchDrive(28);
   claw.set(false);
   inchDrive(-10);
-  gyroturn(125, facing);
+  // platform it
+  gyroturn(110, facing);
   lift(100, 1700);
-  inchDrive(36);
+  inchDrive(39);
   lift(-60,400);
   claw.set(true);
   lift(60, 400);
   lift(0, 0);
   inchDrive(-30);
-  gyroturn(90, facing);
+  // middle goal
+  gyroturn(80, facing);
   mogo(-100,1200);
   inchDrive(-40);
   mogo(100, 1500);
