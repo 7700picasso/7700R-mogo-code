@@ -335,21 +335,21 @@ void auton() {
   mogo(100, 1500, false);
   picasso.set(true);
   mogo(0, 0);
-  inchDrive(8);                       //please put notes for all functions in this auton for troubleshooting 
+  inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
   // GRAB FIRST NEUTRAL GOAL
   gyroturn(90, facing);
   claw.set(true); // open claw
   inchDrive(55);
   claw.set(false); // close claw
-  inchDrive(-10);
+  inchDrive(-8);
   // put it on the platform
   gyroturn(140, facing);
   lift(100, 1700);
-  inchDrive(38); // WAS 38
+  inchDrive(43); // WAS 38
   lift(-60, 400);
   claw.set(true);
   lift(60, 400);
-  inchDrive(-22);
+  inchDrive(-22);   
   gyroturn(-100, facing);
   lift(-100, 1500);
   inchDrive(28);

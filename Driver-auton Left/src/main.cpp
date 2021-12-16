@@ -324,12 +324,24 @@ void auton() {
 
   Gyro.setRotation(0, degrees);
   brakeDrive();
+
+  mogo2(-90, 100, 0);
+  inchDrive(-57);                       //please put notes for all functions in this auton for troubleshooting 
+  // GRAB FIRST NEUTRAL GOAL
+  gyroturn(90, facing);
+  mogo(45,100,500);
+  gyroturn(-90,facing);
+  claw.set(true); // open claw
+  inchDrive(1.2*UNITSIZE);
+  claw.set(false); // close claw
+  gyroturn(45,facing);
+  inchDrive(2*UNITSIZE);
   // PICCASO FIRST ALLIANCE GOAL
-  mogo2(-90);
+  /*mogo2(-90);
   inchDrive(-17);
   mogo2(90, 500);
   picasso.set(true);
-  inchDrive(8);                       //please put notes for all functions in this auton for troubleshooting 
+  inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
   // GRAB FIRST NEUTRAL GOAL
   gyroturn(-90, facing);
   mogo2(-90, 100, 0);
@@ -344,7 +356,7 @@ void auton() {
   // go home
   gyroturn(-45, facing);
   inchDrive(-2 * UNITSIZE);
-  gyroturn(-45, facing); // face away from field.
+  gyroturn(-45, facing); // face away from field.*/
 }
 
 //driver controls,dont change unless your jaehoon or sean
