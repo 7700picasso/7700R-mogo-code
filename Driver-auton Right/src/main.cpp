@@ -28,8 +28,8 @@
 // backHook             digital_out   H               
 // claw                 digital_out   G               
 // Inertial21           inertial      21              
-// picasso              digital_out   A              
-// Gyro                 inertial      20              
+// picasso              digital_out   A               
+// Gyro                 inertial      19              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -283,7 +283,7 @@ Brain.Screen.printAt(1, 150, "i am done ");
 // modded gyro code, sadge
 void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.25; // was 2.0
-  double Ki = 0.5; // adds a bit less than 50% when there is 90° left.
+  double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
   double Kd = 1.0; // was 16.0
 
   Integral directions;
@@ -292,7 +292,7 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
  
   double currentDir = Gyro.rotation(degrees);
   double speed = 100;
-  double error = currentDir;
+  double error = target;
   double olderror = error;
   
   idealDir += target;
@@ -317,19 +317,26 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
 
 //wow maybe the auton code,this auton is the right side auton,work in progress but works how is 
 void auton() {
+
+  while (Gyro.isCalibrating()) {
+    wait(10,msec);
+  }
+  Gyro.setRotation(0,degrees);
+
   double facing = 0;
+
   claw.set(true); //open claw
   wait(100, msec); //wait
-  inchDrive(55, 100);//go forward 55 inches
+  inchDrive(55);//go forward 55 inches
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
   claw.set(false);//close claw,just picked up that yellow mogo
   wait(20, msec);//wait dumbass
-  inchDrive(-30, 100);//go backwards 30 inches
+  inchDrive(-30);//go backwards 30 inches
   gyroturn(-90, facing); //turn 90 degress with the robots back facing the right side mogo
-  inchDrive(10,100);//drive forward 10 inches to align and have time for the mogo to go down
+  inchDrive(10);//drive forward 10 inches to align and have time for the mogo to go down
   mogo(-100,1200);//mogo goes down
-  inchDrive(-25,100);//drive backwards 25 inches to mogo
+  inchDrive(-25);//drive backwards 25 inches to mogo
   mogo(100,3000);//pikup mogo
   picasso.set(true);//picasso that mogo
   picasso.set(true);//picasso stupid so again to make sure,fr this fixed it lol

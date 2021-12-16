@@ -21,7 +21,7 @@ digital_out backHook = digital_out(Brain.ThreeWirePort.H);
 digital_out claw = digital_out(Brain.ThreeWirePort.G);
 inertial Inertial21 = inertial(PORT21);
 digital_out picasso = digital_out(Brain.ThreeWirePort.A);
-inertial Gyro = inertial(PORT20);
+inertial Gyro = inertial(PORT19);
 
 // VEXcode generated functions
 // define variable for remote controller enable/disable

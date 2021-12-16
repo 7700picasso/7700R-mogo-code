@@ -287,7 +287,7 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
   double Kd = 1.0; // was 16.0
 
   Integral directions;
-  directions.size = 10;
+  directions.size = 15;
   directions.innit();
  
   double currentDir = Gyro.rotation(degrees);
@@ -298,16 +298,16 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
   idealDir += target;
   target = currentDir + idealDir - Gyro.rotation(degrees);
   
-  while(fabs(error) > 1.25){ //fabs = absolute value while loop again
+  while(fabs(error) > 2){ //fabs = absolute value while loop again
     currentDir = Gyro.rotation(degrees);
-    speed = Kp * error + /*Ki * directions.mean()*/ + Kd * (error - olderror); // big error go fast slow error go slow 
+    error = target - currentDir; //error gets smaller closer you get,robot slows down
+    directions.addVal(error);
+    speed = Kp * error + Ki * directions.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
     Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir); //math thing again,2 decimal places
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     //all ths print screen helps test to make sure gyro not broke
-    error = target - currentDir; //error gets smaller closer you get,robot slows down
     olderror = error;
-    directions.addVal(error);
   }
   brakeDrive();
   currentDir = Gyro.rotation(degrees); //prints the gyro rotation degress
@@ -316,9 +316,14 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
 
 //wow maybe the auton code,this auton is the left side auton,works well
 void auton() {
-
   double facing = 0;
 
+  while (Gyro.isCalibrating()) {
+    wait(10, msec);
+  }
+
+  Gyro.setRotation(0, degrees);
+  brakeDrive();
   // PICCASO FIRST ALLIANCE GOAL
   mogo2(-90);
   inchDrive(-17);

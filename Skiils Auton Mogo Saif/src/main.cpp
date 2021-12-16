@@ -286,7 +286,7 @@ Brain.Screen.printAt(1, 150, "i am done ");
 // modded gyro code, sadge
 void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.25; // was 2.0
-  double Ki = 0.5; // adds a bit less than 50% when there is 90° left.
+  double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
   double Kd = 1.0; // was 16.0
 
   Integral directions;
@@ -345,7 +345,7 @@ void auton() {
   // put it on the platform
   gyroturn(140, facing);
   lift(100, 1700);
-  inchDrive(39); // WAS 38, 100
+  inchDrive(38); // WAS 38
   lift(-60, 400);
   claw.set(true);
   lift(60, 400);
