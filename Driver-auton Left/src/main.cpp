@@ -283,16 +283,16 @@ Brain.Screen.printAt(1, 150, "i am done ");
 // modded gyro code, sadge
 void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.25; // was 2.0
-  double Ki = 0.5; // adds a bit less than 50% when there is 90° left.
+  double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
   double Kd = 1.0; // was 16.0
 
   Integral directions;
-  directions.size = 15;
+  directions.size = 10;
   directions.innit();
  
   double currentDir = Gyro.rotation(degrees);
   double speed = 100;
-  double error = currentDir;
+  double error = target;
   double olderror = error;
   
   idealDir += target;
@@ -300,14 +300,14 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
   
   while(fabs(error) > 1.25){ //fabs = absolute value while loop again
     currentDir = Gyro.rotation(degrees);
-    error = target - currentDir; //error gets smaller closer you get,robot slows down
-    directions.addVal(error);
-    speed = Kp * error + Ki * directions.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
+    speed = Kp * error + /*Ki * directions.mean()*/ + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
     Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir); //math thing again,2 decimal places
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     //all ths print screen helps test to make sure gyro not broke
+    error = target - currentDir; //error gets smaller closer you get,robot slows down
     olderror = error;
+    directions.addVal(error);
   }
   brakeDrive();
   currentDir = Gyro.rotation(degrees); //prints the gyro rotation degress
@@ -320,15 +320,14 @@ void auton() {
   double facing = 0;
 
   // PICCASO FIRST ALLIANCE GOAL
-  mogo(-100, 1200);
+  mogo2(-90);
   inchDrive(-17);
-  mogo(100, 1500, false);
+  mogo2(90, 500);
   picasso.set(true);
-  mogo(0, 0);
   inchDrive(8);                       //please put notes for all functions in this auton for troubleshooting 
   // GRAB FIRST NEUTRAL GOAL
   gyroturn(-90, facing);
-  mogo2(-95, 100, 0);
+  mogo2(-90, 100, 0);
   inchDrive(-57);
   mogo2(30);
   // GRAB SECOND NEUTRAL GOAL
