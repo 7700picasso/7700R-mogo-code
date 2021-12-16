@@ -323,40 +323,28 @@ void auton() {
   }
 
   Gyro.setRotation(0, degrees);
+  
   brakeDrive();
-
-  mogo2(-90, 100, 0);
-  inchDrive(-57);                       //please put notes for all functions in this auton for troubleshooting 
-  // GRAB FIRST NEUTRAL GOAL
-  gyroturn(90, facing);
-  mogo(45,100,500);
-  gyroturn(-90,facing);
-  claw.set(true); // open claw
-  inchDrive(1.2*UNITSIZE);
-  claw.set(false); // close claw
-  gyroturn(45,facing);
-  inchDrive(2*UNITSIZE);
-  // PICCASO FIRST ALLIANCE GOAL
-  /*mogo2(-90);
+  
+  // PICCASO
+  mogo2(-90);
   inchDrive(-17);
-  mogo2(90, 500);
+  mogo(90);
   picasso.set(true);
-  inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
-  // GRAB FIRST NEUTRAL GOAL
-  gyroturn(-90, facing);
+  inchDrive(4); // align with yellow 1
+  // FIRST YELLOW
   mogo2(-90, 100, 0);
+  gyroturn(-90, facing);
   inchDrive(-57);
-  mogo2(30);
-  // GRAB SECOND NEUTRAL GOAL
+  mogo2(45, 100, 500);
+  // SECOND YELLOW
   claw.set(true); // open claw
   gyroturn(-90, facing);
-  inchDrive(1.5 * UNITSIZE);
+  inchDrive(21);
   claw.set(false); // close claw
-  lift2(45, 100, 0); // lift it up to bring it off of an enemy lift
-  // go home
-  gyroturn(-45, facing);
-  inchDrive(-2 * UNITSIZE);
-  gyroturn(-45, facing); // face away from field.*/
+  gyroturn(-45,facing);
+  inchDrive(2*UNITSIZE);
+  gyroturn(-45,facing);
 }
 
 //driver controls,dont change unless your jaehoon or sean
