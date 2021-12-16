@@ -295,7 +295,7 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
  
   double currentDir = Gyro.rotation(degrees);
   double speed = 100;
-  double error = currentDir;
+  double error = target;
   double olderror = error;
   
   idealDir += target;
