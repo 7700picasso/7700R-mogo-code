@@ -342,9 +342,9 @@ void auton() {
   claw.set(false); // close claw
   lift2(45, 100, 0); // lift it up to bring it off of an enemy lift
   // go home
-  gyroturn(45, facing);
-  inchDrive(3 * UNITSIZE);
-  gyroturn(45, facing); // face away from field.
+  gyroturn(-45, facing);
+  inchDrive(-2 * UNITSIZE);
+  gyroturn(-45, facing); // face away from field.
 }
 
 //driver controls,dont change unless your jaehoon or sean
