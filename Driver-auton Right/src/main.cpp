@@ -47,11 +47,11 @@ const double Diameter = 3.25;
 
 //dont touch
 //Diameter is the wheel
-//pie is pie dumbass
+//pie is pie dumbass it also tastes good bc thats the wrong pi
 
 // for auton 
 double x = 0, y = 0;
-const uint8_t UNITSIZE = 24;
+const uint8_t UNITSIZE = 24; // tile size
 
 void pre_auton(void) {
   vexcodeInit();
@@ -76,22 +76,25 @@ void drive(int lspeed, int rspeed, int wt){
 //use inchdrive to go forward and backwards,use gyro to turn
 
 struct Integral {
-  std::vector<double> values;
-  uint16_t size = 1;
 
-  void innit() {
+  std::vector<double> values;
+  uint8_t size = 1;
+
+  // adds zero to everything
+  void innit(double startVal) {
     values = {};
 
     for (int i = 0; i < size; i++)
-      values.push_back(0);
+      values.push_back(startVal);
   }
 
+  // inserts a new value in the front, gets rid of the last value, and shifts everything up one index
   void addVal(double val) {
     for (int i = size; i > 0; --i)
       values[i] = values[i - 1];
     values[0] = val;
   }
-
+  // gets the average of the values
   double mean() {
     double sum = 0;
     for (int i = 0; i < size; i++)
@@ -99,6 +102,10 @@ struct Integral {
     return sum / size;
   }
 };
+
+/*double MinRots() {
+  double rotations[] = {leftDrive1.position(rev), leftmiddle.position(rev), leftDrive2.position(rev), leftDrive1.position(rev), leftmiddle.position(rev), rightDrive2.position(rev)};
+}*/
 
 void brakeDrive() {
   leftDrive1.stop(brake);
@@ -119,17 +126,10 @@ void coastDrive() {
   rightmiddle.stop(coast);
 }
 
-void lift(int speed, int wt, bool stop = true){
-  lift1.spin(forward, speed, pct);
-  wait(wt, msec);
-  if (stop)
-    lift1.stop(hold);
-}
-
-void lift2(double angle, double speed = 100, int WT = -1) { // WT of -1 means wait for completion
+void lift(double angle, int WT = -1, double speed = 100) { // WT of -1 means wait for completion
   // gear ratio is 1 / 9
   lift1.setVelocity(speed, percent);
-  lift1.spinFor(forward, 9 * angle, degrees, WT == -1);
+  lift1.spinFor(forward, 9 * angle, degrees, WT == -1); // wait for competion is determined by whether or not WT is -1
 
   if (WT >= 0)
     wait(WT, msec);
@@ -138,19 +138,11 @@ void lift2(double angle, double speed = 100, int WT = -1) { // WT of -1 means wa
 }
 
 //makes lift go up or down
-// its the lift speed then wait time
-//example lift(-100,1200);  so lift 100% for 1200 msc
-// 100 is up and -100 is down,or other way around,you can figure that out
+// its the angle to move the lift by then wait time then speed
+// example lift(90,1200);  so lift 90 degrees up for 1200 msc
+// example 2: lift(-90,-1,100); lift goes down 90 degrees, waits until it's done, goes at 100% speed
 
-void mogo(int speed, int wt, bool stop = true) {
-  amogus.spin(forward, speed, pct);
-  wait(wt, msec);
-
-  if (stop)
-    amogus.stop(hold);
-}
-
-void mogo2(double angle, double speed = 100, int WT = -1) { // WT of -1 is wait for completion
+void mogo(double angle, int WT = -1, double speed = 100) { // WT of -1 is wait for completion
   // gear ratio is 1/5
   amogus.setVelocity(speed, percent);
   amogus.spinFor(forward, 5 * angle, degrees, WT == -1);
@@ -189,7 +181,7 @@ void backhooks (bool open) {
 
 
 void picassos (bool open) {
-  picasso.set (open);
+  picasso.set(open);
 }
 
 //opens and closes thee picasso
@@ -214,7 +206,7 @@ void inchDrive(double target, double accuracy = 1) {
 
   Integral errors;
   errors.size = 25; // takes about 0.25 seconds to fill up
-  errors.innit();
+  errors.innit(error);
 
   /*
   dont use the drive function you dumbass AND DONT USE "//" for multiple lines
@@ -257,14 +249,14 @@ void balance() {
   double oldpitch = pitch;                //work in progress code
   inchDrive(10, 100);
   Brain.Screen.clearScreen();
-  double Kp = 4;
+  double Kp =  4;
   double Ki = 1;
   double Kd = 90;
   double speed;
 
   Integral pitches;
   pitches.size = 10;
-  pitches.innit();
+  pitches.innit(pitch);
 
 double stopAng = 5; // stop when fabs(pitch) is at most 5°
 while(fabs(pitch) > stopAng)
@@ -285,15 +277,15 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
   double Kp = 1.25; // was 2.0
   double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
   double Kd = 1.0; // was 16.0
-
-  Integral directions;
-  directions.size = 15;
-  directions.innit();
  
   double currentDir = Gyro.rotation(degrees);
   double speed = 100;
   double error = target;
   double olderror = error;
+
+  Integral directions;
+  directions.size = 15;
+  directions.innit(error);
   
   idealDir += target;
   target = currentDir + idealDir - Gyro.rotation(degrees);
@@ -326,21 +318,20 @@ void auton() {
   double facing = 0;
 
   claw.set(true); //open claw
-  wait(100, msec); //wait
+  picasso.set(false); // open the picasso who forgot to put this bruh
   inchDrive(55);//go forward 55 inches
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
   claw.set(false);//close claw,just picked up that yellow mogo
-  wait(20, msec);//wait dumbass
+  lift(10, 20); // bring it off a lift bc that might happen with 7700E
   inchDrive(-30);//go backwards 30 inches
   gyroturn(-90, facing); //turn 90 degress with the robots back facing the right side mogo
   inchDrive(10);//drive forward 10 inches to align and have time for the mogo to go down
-  mogo(-100,1200);//mogo goes down
+  mogo(-90,333);//mogo goes down
   inchDrive(-25);//drive backwards 25 inches to mogo
-  mogo(100,3000);//pikup mogo
+  mogo(90);//pikup mogo
   picasso.set(true);//picasso that mogo
-  picasso.set(true);//picasso stupid so again to make sure,fr this fixed it lol
-  mogo(-100,1200);//mogo back down and ready for driver
+  mogo(-90);//mogo back down and ready for driver
   gyroturn(90, facing); //turn facing the field 
 }
 
