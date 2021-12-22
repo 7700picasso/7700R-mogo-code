@@ -413,7 +413,7 @@ void auton() {
   gyroturn(170.5376778, facing);
   inchDrive(1.520690633 * UNITSIZE);
   claw.set(false);
-  // GET ALLIANCE GOAL NEAR PLATFORM
+  // PICASSO ALLIANCE GOAL NEAR PLATFORM
   gyroturn(35.53767779,facing);
   mogo(-95.0, 0);
   inchDrive(-2.474873734 * UNITSIZE);
@@ -421,51 +421,7 @@ void auton() {
   inchDrive(-UNITSIZE);
   mogo(100);
   picasso.set(false);
-
-  // PICCASO FIRST ALLIANCE GOAL
-  /*mogo(-100, 1200);
-  inchDrive(-17);
-  mogo(100, 1500, false);
-  picasso.set(true);
-  mogo(0, 0);
-  inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
-  // GRAB FIRST NEUTRAL GOAL
-  gyroturn(90, facing);
-  claw.set(true); // open claw
-  inchDrive(55);
-  claw.set(false); // close claw
-  inchDrive(-8);
-  // put it on the platform
-  gyroturn(140, facing);
-  lift(100, 1700);
-  inchDrive(43); // WAS 38
-  lift(-60, 400);
-  claw.set(true);
-  lift(60, 400);
-  inchDrive(-22);   
-  gyroturn(-100, facing);
-  lift(-100, 1500);
-  inchDrive(28);
-  claw.set(false);
-  inchDrive(-10);
-  // platform it
-  gyroturn(110, facing);
-  lift(100, 1700);
-  inchDrive(39);
-  lift(-60,400);
-  claw.set(true);
-  lift(60, 400);
-  lift(0, 0);
-  inchDrive(-30);
-  // middle goal
-  gyroturn(80, facing);
-  mogo(-100,1200);
-  inchDrive(-40);
-  mogo(100, 1500);
-  gyroturn(-100, facing);
-  lift(-100, 1500);
-  inchDrive(20);
-  claw.set(false);*/
+  // ALLIANCE GOAL 
 }
 
 //driver controls,dont change unless your jaehoon or sean
