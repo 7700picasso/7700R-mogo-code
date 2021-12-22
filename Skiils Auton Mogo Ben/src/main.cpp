@@ -155,7 +155,7 @@ void coastDrive() {
 }
 
 
-void lift(double angle, int WT = -1, int speed = 100) {
+void liftDeg(double angle, int WT = -1, int speed = 100) {
   lift1.setVelocity(speed, percent);
   lift1.setStopping(hold);
 
@@ -169,7 +169,7 @@ void lift(double angle, int WT = -1, int speed = 100) {
   }
 }
 
-void lift(int speed, int duration, bool stop) {//, int WT = -1) {
+void liftTime(int speed, int duration, bool stop) {//, int WT = -1) {
   lift1.spin(forward,speed,percent);
   wait(duration,msec);
   if (stop) {
@@ -211,8 +211,9 @@ void mogoTime(int speed, int duration, bool stop = false) {//, int WT = -1) {
 
 
 void claw(bool open) {
+  wait(50 * open, msec);
   Claw.set(open);
-  wait(!open * 50, msec);
+  wait(50 * !open, msec);
 }
 
 //idk maybe opens and closes the claw
@@ -250,8 +251,15 @@ void inchDrive(double target, double accuracy = 0.25) {
   double error = target;
   double olderror = error;
   
-  dist += target;
-  target = dist;
+  /*dist += target;
+  target = dist;*/
+
+  leftDrive1.setPosition(0, rev);
+  leftDrive2.setPosition(0, rev);
+  leftmiddle.setPosition(0, rev);
+  rightDrive1.setPosition(0, rev);
+  rightDrive2.setPosition(0, rev);
+  rightmiddle.setPosition(0, rev);
 
   Integral errors;
   errors.size = 25; // takes about 0.25 seconds to fill up
@@ -354,6 +362,29 @@ void gyroturn(double target, double accuracy = 1.5) { // idk maybe turns the rob
   Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", Gyro.rotation(degrees));
 }
 
+void goTo(double x2, double y2, bool isForwards = true) {
+  // point towards location
+  double distX = x - x2;
+  double distY = y - y2;
+
+  double dir = 180 * !isForwards + 180 / pi * atan(distY / distX) - Gyro.rotation(degrees);
+
+  // change dir to somehting between -180 and 180
+  double tmp = dir;
+  tmp = (180 - dir) / 360 - floor( (180 - dir) / 360 );
+  while (tmp < 0)
+  {
+    dir += 360,
+    tmp = (180 - dir) / 360 - floor( (180 - dir) / 360 );
+  }
+  dir = 180 - tmp;
+
+  gyroturn(dir, 0.5);
+
+  // go to location
+  inchDrive(sqrt(distX * distX + distY * distY));
+}
+
 
 // This auton is the skills auton,not fully tested
 void auton() {
@@ -369,18 +400,20 @@ void auton() {
   // FIRST ALLIANCE (dont picasso)
   brakeDrive(); // set motors to brake
   mogoTime(-100, 750, false); // lower lift for 750 msec
-  inchDrive(-17);
-  mogoDeg(45); // raise by 45 degrees
+  inchDrive(-5/3 * UNITSIZE); 
+  mogoDeg(90, 400); // raise by 90 degrees
+  liftTime(-100, 100, true);
   inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
   // OTHER ALLIANCE
   gyroturn(-90);
   claw(true); // open claw
   inchDrive(-1 * UNITSIZE);
-  gyroturn(-90);
-  inchDrive(3.5 * UNITSIZE);
+  gyroturn(-90, 0.5);
+  inchDrive(3.75 * UNITSIZE);
+  wait(125, msec);
   claw(false);
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
-  lift(90);
+  liftDeg(90, 0);
   inchDrive(-12);
   gyroturn(-90);
   inchDrive(2.25 * UNITSIZE);
@@ -391,43 +424,41 @@ void auton() {
   gyroturn(45);
   inchDrive(6);
   claw(true);
-  lift(-95);
-  inchDrive(-6); //
+  liftDeg(-95, 0);
+  inchDrive(-6);
   // GET SECOND YELLOW
   gyroturn(90);
-  mogoDeg(-45);
+  mogoDeg(-90);
   inchDrive(16);
   claw(false);
   // PLATFORM FIRST YELLOW
-  lift(90);
+  liftDeg(90, 0);
   mogoDeg(90);
-  inchDrive(-5 / 3 * UNITSIZE); // about 1 + 2/3 units
+  inchDrive(-5 / 3 * UNITSIZE - 3); // about 1 + 2/3 units with some inches extra so that the spin doesn't move it
+  inchDrive(3);
   gyroturn(-90);
   inchDrive(6);
   claw(true);
-  lift(-95);
+  liftDeg(-95,0);
   inchDrive(-6);
   // GET LAST ALLIANCE
-  while (lift1.position(degrees) > 270) { // make sure that the lift is low enought b4 continuing
-    wait(10, msec);
-  }
   gyroturn(-90);
-  inchDrive(8);
+  inchDrive(11);
   claw(false);
-  lift(90);
+  liftDeg(90,0);
   // PLATFORM LAST ALLIANCE
-  inchDrive(-11 / 6 * UNITSIZE); // about 1 + 5/6 units
+  inchDrive(-11 / 6 * UNITSIZE - 3); // about 1 + 5/6 units
   gyroturn(90);
   inchDrive(6);
   claw(true);
   // GET OTHER SHORT YELLOW
-  lift(-95);
+  liftDeg(-95,0);
   inchDrive(-6);
   gyroturn(-135);
   inchDrive(2 * UNITSIZE);
   claw(false);
   // PLATFORM OTHER SHORT YELLOW
-  lift(90);
+  liftDeg(90,0);
   inchDrive(-2 * UNITSIZE);
   gyroturn(45);
   inchDrive(-6);
@@ -435,7 +466,7 @@ void auton() {
   inchDrive(6);
   claw(true);
   // GET TALL GOAL
-  lift(-95);
+  liftDeg(-95,0);
   inchDrive(-6);
   gyroturn(170.5376778);
   inchDrive(1.520690633 * UNITSIZE);
@@ -455,12 +486,12 @@ void auton() {
   inchDrive(4 * UNITSIZE);
   mogoDeg(60, 500);
   // ALIGN TO PARK
-  lift(90);
+  liftDeg(90,0);
   gyroturn(90);
   inchDrive(4 * UNITSIZE);
   gyroturn(-90);
   inchDrive(0.75 * UNITSIZE);
-  lift(-90); // bring down the platform
+  liftDeg(-90,0); // bring down the platform
   // PARK
   inchDrive(1 * UNITSIZE);
   balance();
