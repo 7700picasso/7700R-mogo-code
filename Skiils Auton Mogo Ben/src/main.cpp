@@ -26,7 +26,7 @@
 // amogus               motor         18              
 // lift1                motor         1               
 // backHook             digital_out   H               
-// claw                 digital_out   G               
+// Claw                 digital_out   G               
 // Inertial21           inertial      21              
 // picasso              digital_out   A               
 // Gyro                 inertial      19              
@@ -48,6 +48,8 @@ double Diameter = 3.25;
 // global vars for auton
 double x = 0, y = 0; // x and y pos of robot relative to start pos.
 const uint8_t UNITSIZE = 24;
+double facing = 0;
+double dist = 0; 
 
 /*
 dont touch
@@ -103,6 +105,22 @@ struct Integral {
   }
 };
 
+double minRots() {
+  double rots[] = {
+    leftDrive1.position(rev), leftDrive2.position(rev), leftmiddle.position(rev),
+    rightDrive1.position(rev), rightDrive2.position(rev), rightmiddle.position(rev)
+  };
+  double min = rots[0];
+
+  for (int i = 1; i < 6; i++) {
+    if (rots[i] < min) {
+      min = rots[i];
+    }
+  }
+
+  return min;
+}
+
 void brakeDrive() {
   leftDrive1.stop(brake);
   leftDrive2.stop(brake);
@@ -111,6 +129,13 @@ void brakeDrive() {
   rightDrive2.stop(brake);
   rightmiddle.stop(brake);
   //break code for the gryo balance code
+  // actually change brake type
+  leftDrive1.setStopping(brake);
+  leftDrive2.setStopping(brake);
+  leftmiddle.setStopping(brake);
+  rightDrive1.setStopping(brake);
+  rightDrive2.setStopping(brake);
+  rightmiddle.setStopping(brake);
 }
 
 void coastDrive() {
@@ -120,6 +145,13 @@ void coastDrive() {
   rightDrive1.stop(coast); //coast drive
   rightDrive2.stop(coast); //saif put notes here with examples 
   rightmiddle.stop(coast);
+  // actually set brake stop type to coast
+  leftDrive1.setStopping(coast);
+  leftDrive2.setStopping(coast);
+  leftmiddle.setStopping(coast);
+  rightDrive1.setStopping(coast); 
+  rightDrive2.setStopping(coast);
+  rightmiddle.setStopping(coast);
 }
 
 
@@ -150,7 +182,7 @@ void lift(int speed, int duration, bool stop) {//, int WT = -1) {
 //example lift(-100,1200);  so lift 100% for 1200 msc
 // 100 is up and -100 is down,or other way around,you can figure that out
 
-void mogo(double angle, int WT = -1, int speed = 100) {
+void mogoDeg(double angle, int WT = -1, int speed = 100) {
   amogus.setVelocity(speed, percent);
   amogus.setStopping(hold);
 
@@ -164,7 +196,7 @@ void mogo(double angle, int WT = -1, int speed = 100) {
   }
 }
 
-void mogo(int speed, int duration, bool stop = false) {//, int WT = -1) {
+void mogoTime(int speed, int duration, bool stop = false) {//, int WT = -1) {
   amogus.spin(forward,speed,percent);
   wait(duration,msec);
   if (stop) {
@@ -178,8 +210,9 @@ void mogo(int speed, int duration, bool stop = false) {//, int WT = -1) {
 // 100 is up and -100 is down,I know this 
 
 
-void clawopen (bool open) {
-  claw.set (open);
+void claw(bool open) {
+  Claw.set(open);
+  wait(!open * 50, msec);
 }
 
 //idk maybe opens and closes the claw
@@ -209,45 +242,32 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(double target, double accuracy = 1) {
-  leftDrive1.setPosition(0,  rev);
-  leftDrive2.setPosition(0,  rev); // might only need 1 of 3 of these but im a dumbass so leave it 
-  leftmiddle.setPosition(0,  rev);
-
-  double 
-    speed,
-    inches = 0,
-    error = target,
-    olderror = error,
-    Kp = 50 / 3, // about 16.667, was previously 10
-    Ki = 5, // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
-    Kd = 40 / 3; // about 13.333, was previously 20.0
+void inchDrive(double target, double accuracy = 0.25) {
+  double Kp = 50 / 3; // about 16.667, was previously 10
+  double Ki = 5; // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
+  double Kd = 40 / 3; // about 13.333, was previously 20.0
+  double speed;
+  double error = target;
+  double olderror = error;
+  
+  dist += target;
+  target = dist;
 
   Integral errors;
   errors.size = 25; // takes about 0.25 seconds to fill up
   errors.innit();
 
-  /*
-  dont use the drive function you dumbass AND DONT USE "//" for multiple lines
-  use inchdrive,this took me a while to code :(
-  its target/inches/amount then speed/percentage
-  examples
-  inchDrive(55, 100); go 55in forward at 100%
-  inchDrive(-55, 100); go 55in backwards at 100%
-  */
-
-  while(fabs(error) > accuracy){
+  while(fabs(error) > accuracy) {
     // did this late at night but this while is important 
     // fabs = absolute value
-    error = target - leftmiddle.position(rev) * Diameter * pi; //the error gets smaller when u reach ur target
+    error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
     errors.addVal(error);
     speed = Kp * error + Ki * errors.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
     olderror = error;
- //inches = turns * Diameter * pi;
-    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", leftmiddle.position(rev)); //math fun
+    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", minRots()); // math fun
     Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
-    Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
+    //Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
     Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
   }
   brakeDrive();
@@ -255,7 +275,9 @@ void inchDrive(double target, double accuracy = 1) {
   double 
     r = leftmiddle.position(rev) * Diameter * pi / UNITSIZE,
     theta = Gyro.rotation(degrees) * pi / 180;
-  x += r * cos(theta), y += r * sin(theta);
+
+    x += r * cos(theta), 
+    y += r * sin(theta);
 
   Brain.Screen.printAt(50, 180, "Position:   (%.3f, %.3f)", x, y);
 }
@@ -266,18 +288,17 @@ void inchDrive(double target, double accuracy = 1) {
 void balance() {
   double pitch = Gyro.pitch(degrees);
   double oldpitch = pitch;                //work in progress code
-  inchDrive(10, 100);
   Brain.Screen.clearScreen();
   double Kp = 4;
   double Ki = 1;
-  double Kd = 90;
+  double Kd = 110;
   double speed;
 
   Integral pitches;
   pitches.size = 10;
   pitches.innit();
 
-double stopAng = 5; // stop when fabs(pitch) is at most 5°
+double stopAng = -1;// 5; // stop when fabs(pitch) is at most 5°
 while(fabs(pitch) > stopAng)
 {
   pitch = Gyro.pitch(degrees);
@@ -292,7 +313,7 @@ Brain.Screen.printAt(1, 150, "i am done ");
 }
 
 // modded gyro code, sadge
-void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+void gyroturn(double target, double accuracy = 1.5) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.25; // was 2.0
   double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
   double Kd = 1.0; // was 16.0
@@ -301,35 +322,41 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
   directions.size = 15;
   directions.innit();
  
-  double currentDir = Gyro.rotation(degrees);
   double speed = 100;
   double error = target;
   double olderror = error;
   
-  idealDir += target;
-  target = currentDir + idealDir - Gyro.rotation(degrees);
-  
-  while(fabs(error) > 1.25){ //fabs = absolute value while loop again
-    currentDir = Gyro.rotation(degrees);
-    error = target - currentDir; //error gets smaller closer you get,robot slows down
+  facing += target;
+  target = facing;
+  // reset inchDrive error corrections because it only works on linear path 
+
+  dist = 0;
+  leftDrive1.setPosition(0, rev);
+  leftDrive2.setPosition(0, rev);
+  leftmiddle.setPosition(0, rev);
+  rightDrive1.setPosition(0, rev);
+  rightDrive2.setPosition(0, rev);
+  rightmiddle.setPosition(0, rev);
+
+  // now for the acutal movement
+
+  while(fabs(error) > accuracy){ //fabs = absolute value while loop again
+    error = target - Gyro.rotation(degrees); //error gets smaller closer you get,robot slows down
     directions.addVal(error);
     speed = Kp * error + Ki * directions.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
-    Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir); //math thing again,2 decimal places
+    //Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir); //math thing again,2 decimal places
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     //all ths print screen helps test to make sure gyro not broke
     olderror = error;
   }
   brakeDrive();
-  currentDir = Gyro.rotation(degrees); //prints the gyro rotation degress
-  Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir);
+  Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", Gyro.rotation(degrees));
 }
 
 
 // This auton is the skills auton,not fully tested
 void auton() {
-  double facing = 0;
-
   backHook.set(false);
   picasso.set(false);
 
@@ -341,87 +368,102 @@ void auton() {
 
   // FIRST ALLIANCE (dont picasso)
   brakeDrive(); // set motors to brake
-  mogo(-100, 750, false); // lower lift for 750 msec
+  mogoTime(-100, 750, false); // lower lift for 750 msec
   inchDrive(-17);
-  mogo(45.0, 500); // raise by 45 degrees
+  mogoDeg(45); // raise by 45 degrees
   inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
   // OTHER ALLIANCE
-  gyroturn(-90, facing);
-  claw.set(true); // open claw
-  inchDrive(-UNITSIZE);
-  gyroturn(-90, facing);
-  inchDrive(3.333 * UNITSIZE);
-  claw.set(false);
+  gyroturn(-90);
+  claw(true); // open claw
+  inchDrive(-1 * UNITSIZE);
+  gyroturn(-90);
+  inchDrive(3.5 * UNITSIZE);
+  claw(false);
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
-  lift(90.0, 20);
-  inchDrive(-8);
-  gyroturn(-90, facing);
+  lift(90);
+  inchDrive(-12);
+  gyroturn(-90);
   inchDrive(2.25 * UNITSIZE);
   // PLATFORM ALLIANCE GOAL
   inchDrive(-6);
-  gyroturn(-45,facing);
-  inchDrive(1.41421 * UNITSIZE);
-  gyroturn(45,facing);
+  gyroturn(-45);
+  inchDrive(1.41421 * UNITSIZE); // sqrt 2 units
+  gyroturn(45);
   inchDrive(6);
-  claw.set(true);
-  lift(-95.0, 20);
+  claw(true);
+  lift(-95);
   inchDrive(-6); //
   // GET SECOND YELLOW
-  gyroturn(90, facing);
-  mogo(-45);
+  gyroturn(90);
+  mogoDeg(-45);
   inchDrive(16);
-  claw.set(false);
+  claw(false);
   // PLATFORM FIRST YELLOW
-  lift(90.0, 0);
-  mogo(90.0, 20);
-  inchDrive(-1.667 * UNITSIZE);
-  gyroturn(-90, facing);
+  lift(90);
+  mogoDeg(90);
+  inchDrive(-5 / 3 * UNITSIZE); // about 1 + 2/3 units
+  gyroturn(-90);
   inchDrive(6);
-  claw.set(true);
-  lift(-95.0, 20);
+  claw(true);
+  lift(-95);
   inchDrive(-6);
   // GET LAST ALLIANCE
   while (lift1.position(degrees) > 270) { // make sure that the lift is low enought b4 continuing
     wait(10, msec);
   }
-  gyroturn(-90, facing);
+  gyroturn(-90);
   inchDrive(8);
-  claw.set(false);
-  lift(90.0, 20);
+  claw(false);
+  lift(90);
   // PLATFORM LAST ALLIANCE
-  inchDrive(-1.83333 * UNITSIZE);
-  gyroturn(90,facing);
+  inchDrive(-11 / 6 * UNITSIZE); // about 1 + 5/6 units
+  gyroturn(90);
   inchDrive(6);
-  claw.set(true);
+  claw(true);
   // GET OTHER SHORT YELLOW
-  lift(-95.0, 20);
+  lift(-95);
   inchDrive(-6);
-  gyroturn(-135, facing);
+  gyroturn(-135);
   inchDrive(2 * UNITSIZE);
-  claw.set(false);
+  claw(false);
   // PLATFORM OTHER SHORT YELLOW
-  lift(90.0, 20);
+  lift(90);
   inchDrive(-2 * UNITSIZE);
-  gyroturn(45, facing);
+  gyroturn(45);
   inchDrive(-6);
-  gyroturn(90, facing);
+  gyroturn(90);
   inchDrive(6);
-  claw.set(true);
+  claw(true);
   // GET TALL GOAL
-  lift(-95.0,20);
+  lift(-95);
   inchDrive(-6);
-  gyroturn(170.5376778, facing);
+  gyroturn(170.5376778);
   inchDrive(1.520690633 * UNITSIZE);
-  claw.set(false);
+  claw(false);
   // PICASSO ALLIANCE GOAL NEAR PLATFORM
-  gyroturn(35.53767779,facing);
-  mogo(-95.0, 0);
+  gyroturn(35.53767779);
+  mogoTime(-100, 750);
   inchDrive(-2.474873734 * UNITSIZE);
-  gyroturn(-90,facing);
-  inchDrive(-UNITSIZE);
-  mogo(100);
-  picasso.set(false);
-  // ALLIANCE GOAL 
+  gyroturn(-90);
+  inchDrive(-1 * UNITSIZE);
+  mogoDeg(100);
+  picasso.set(true);
+  // FAR ALLIANCE GOAL 
+  mogoDeg(-110, 0);
+  inchDrive(1 * UNITSIZE);
+  gyroturn(-45);
+  inchDrive(4 * UNITSIZE);
+  mogoDeg(60, 500);
+  // ALIGN TO PARK
+  lift(90);
+  gyroturn(90);
+  inchDrive(4 * UNITSIZE);
+  gyroturn(-90);
+  inchDrive(0.75 * UNITSIZE);
+  lift(-90); // bring down the platform
+  // PARK
+  inchDrive(1 * UNITSIZE);
+  balance();
 }
 
 //driver controls,dont change unless your jaehoon or sean
@@ -472,11 +514,11 @@ void driver() {
     
     if (Controller1.ButtonX.pressing()) //claw close
     {
-      claw.set(false);
+      claw(false);
     }
     else if (Controller1.ButtonA.pressing()) //claw open
     {
-      claw.set(true);
+      claw(true);
     }
 
     if (Controller1.ButtonUp.pressing()) //picasso open or whaever you say

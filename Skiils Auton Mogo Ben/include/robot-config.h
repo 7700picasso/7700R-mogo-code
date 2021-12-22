@@ -13,7 +13,7 @@ extern motor rightmiddle;
 extern motor amogus;
 extern motor lift1;
 extern digital_out backHook;
-extern digital_out claw;
+extern digital_out Claw;
 extern inertial Inertial21;
 extern digital_out picasso;
 extern inertial Gyro;
