@@ -61,6 +61,7 @@ pie is pie dumbass
 void pre_auton(void) {
   vexcodeInit();
   Gyro.calibrate();
+  GPS.calibrate();
   wait(2000, msec);
 
   // All activities that occur before the competition starts
