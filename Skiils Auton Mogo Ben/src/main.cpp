@@ -86,11 +86,11 @@ struct Integral {
   std::vector<double> values;
   uint16_t size = 1;
 
-  void innit() {
+  void innit(double startVal = 0) {
     values = {};
 
     for (int i = 0; i < size; i++)
-      values.push_back(0);
+      values.push_back(startVal);
   }
 
   void addVal(double val) {
@@ -280,7 +280,7 @@ void inchDrive(double target, double accuracy = 0.25) {
 
   Integral errors;
   errors.size = 25; // takes about 0.25 seconds to fill up
-  errors.innit();
+  errors.innit(error);
 
   while(fabs(error) > accuracy) {
     // did this late at night but this while is important 
@@ -312,7 +312,7 @@ void balance() {
 
   Integral pitches;
   pitches.size = 10;
-  pitches.innit();
+  pitches.innit(pitch);
 
 double stopAng = -1;// 5; // stop when fabs(pitch) is at most 5°
 while(fabs(pitch) > stopAng)
@@ -333,26 +333,17 @@ void gyroturn(double target, double accuracy = 1.5) { // idk maybe turns the rob
   double Kp = 1.25; // was 2.0
   double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
   double Kd = 1.0; // was 16.0
-
-  Integral directions;
-  directions.size = 15;
-  directions.innit();
  
   double speed = 100;
   double error = target;
   double olderror = error;
   
+  Integral directions;
+  directions.size = 15;
+  directions.innit(error);
+  
   facing += target;
   target = facing;
-  // reset inchDrive error corrections because it only works on linear path 
-
-  dist = 0;
-  leftDrive1.setPosition(0, rev);
-  leftDrive2.setPosition(0, rev);
-  leftmiddle.setPosition(0, rev);
-  rightDrive1.setPosition(0, rev);
-  rightDrive2.setPosition(0, rev);
-  rightmiddle.setPosition(0, rev);
 
   // now for the acutal movement
 
@@ -375,22 +366,61 @@ void goTo(double x2, double y2, bool isBackward = false) {
 
   std::vector<double> pos = getPos();
 
-  double distX = x2 - pos[0];
-  double distY = y2 - pos[1];
   /* 
   first finds the direction that the robot needs to face, 
   then converts it from radians to degrees, 
   then find out how much the robot needs to turn to get there, 
   then add 180 degrees as if the robbot needs to be backwards or y2 - y1 > 0
   */
-  double dir = getDir((y2 >= pos[1] - isBackward) * 180 + (180 / pi * atan(distX / distY)) - Gyro.rotation(degrees));
+  double dir = getDir((y2 >= pos[1] - isBackward) * 180 + (180 / pi * atan((x2 - pos[0]) / (y2 - pos[1]))) - Gyro.rotation(degrees));
 
   gyroturn(dir, 1);
 
   Brain.Screen.printAt(0, 40, "(%0.3f, %0.3f), (%0.3f, %0.3f), (%0.3f, %0.3f)", x1, y1, x2, y2, distX, distY);
 
   // go to location
-  inchDrive((isBackward ? -24 : 24) * sqrt(distX * distX + distY * distY));
+  double Dp = 50 / 3; // about 16.667, was previously 10
+  double Di = 5; // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
+  double Dd = 40 / 3; // about 13.333, was previously 20.0
+  double speed;
+  double errorD = target;
+  double olderrorD = errorD;
+  
+  Integral errorsD;
+  errorsD.size = 25; // takes about 0.25 seconds to fill up
+  errorsD.innit();
+  
+  double Mp = 1;
+  double Mi = 0.5;
+  double Md = 2;
+  double deviation;
+  double errorM = dir - Gyro.rotation(degrees); 
+  double olderrorM = errorM
+  
+  Integral errorsM;
+  errorsM.size = 10; // takes about 0.1 seconds to fill up
+  errorsM.innit();
+
+  while(fabs(error) > accuracy) {
+    pos = getPos();
+    errorD = sqrt((x2 - pos[0]) * (x2 - pos[0]) + (y2 - pos[1]) * (y2 - pos[1])); // the error gets smaller when u reach ur target
+    errorsD.addVal(errorD);
+    errorsM.addVal(errorM);
+    speed = Dp * errorD + Di * errorsD.mean() + Dd * (errorD - olderrorD); // big error go fast slow error go slow 
+    speed = (isBackward ? -1 : 1) * (speed > 100 ? 100 : speed < -100 ? -100 : speed);
+    dir = getDir((y2 >= pos[1] - isBackward) * 180 + (180 / pi * atan((x2 - pos[0]) / (y2 - pos[1]))) - Gyro.rotation(degrees));
+    deviation = Mp * errorM + Mi * errorsM.mean() + Md * (errorM - olderrorM);
+    drive(speed + deviation, speed - deviation, 10);
+    olderrorD = errorD;
+    olderrorM = errorM;
+    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", minRots()); // math fun
+    Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
+    //Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
+    Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
+  }
+  brakeDrive();
+}
+  inchDrive((isBackward ? -24 : 24) * );
 }
 
 
