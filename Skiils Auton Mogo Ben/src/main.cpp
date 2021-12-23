@@ -30,6 +30,7 @@
 // Inertial21           inertial      21              
 // picasso              digital_out   A               
 // Gyro                 inertial      19              
+// GPS                  gps           9               
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -279,15 +280,6 @@ void inchDrive(double target, double accuracy = 0.25) {
     Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
   }
   brakeDrive();
-  // update x and y
-  double 
-    r = leftmiddle.position(rev) * Diameter * pi / UNITSIZE,
-    theta = Gyro.rotation(degrees) * pi / 180;
-
-    x += r * cos(theta), 
-    y += r * sin(theta);
-
-  Brain.Screen.printAt(50, 180, "Position:   (%.3f, %.3f)", x, y);
 }
 
 //if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
@@ -362,12 +354,16 @@ void gyroturn(double target, double accuracy = 1.5) { // idk maybe turns the rob
   Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", Gyro.rotation(degrees));
 }
 
-void goTo(double x2, double y2, bool isForwards = true) {
+void goTo(double x2, double y2, bool isBackward = false) {
   // point towards location
-  double distX = x - x2;
-  double distY = y - y2;
 
-  double dir = 180 * !isForwards + 180 / pi * atan(distY / distX) - Gyro.rotation(degrees);
+  double x1 = GPS.xPosition(inches) / 24;
+  double y1 = GPS.yPosition(inches) / 24;
+
+  double distX = x2 - x1;
+  double distY = y2 - y1;
+
+  double dir = (isBackward + (y2 >= y1)) * 180 + (180 / pi * atan(distX / distY)) - Gyro.rotation(degrees);
 
   // change dir to somehting between -180 and 180
   double tmp = dir;
@@ -379,10 +375,10 @@ void goTo(double x2, double y2, bool isForwards = true) {
   }
   dir = 180 - tmp;
 
-  gyroturn(dir, 0.5);
+  gyroturn(dir, 1);
 
   // go to location
-  inchDrive(sqrt(distX * distX + distY * distY));
+  inchDrive((isBackward ? -24 : 24) * sqrt(distX * distX + distY * distY));
 }
 
 
@@ -391,7 +387,7 @@ void auton() {
   backHook.set(false);
   picasso.set(false);
 
-  while (Gyro.isCalibrating()) { // dont start until gyro is calibrated
+  while (Gyro.isCalibrating() || GPS.isCalibrating()) { // dont start until gyro is calibrated
     wait(10, msec);
   }
 
@@ -399,8 +395,10 @@ void auton() {
 
   // FIRST ALLIANCE (dont picasso)
   brakeDrive(); // set motors to brake
-  mogoTime(-100, 750, false); // lower lift for 750 msec
-  inchDrive(-5/3 * UNITSIZE); 
+
+  goTo(0,0);
+  /*mogoTime(-100, 750, false); // lower lift for 750 msec
+  inchDrive(-5 / 3 * UNITSIZE);
   mogoDeg(90, 400); // raise by 90 degrees
   liftTime(-100, 100, true);
   inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
@@ -409,19 +407,20 @@ void auton() {
   claw(true); // open claw
   inchDrive(-1 * UNITSIZE);
   gyroturn(-90, 0.5);
-  inchDrive(3.75 * UNITSIZE);
+  goTo(5.25, 1, 1);//inchDrive(3.75 * UNITSIZE);
+  goTo(5, 1, 0);
   wait(125, msec);
   claw(false);
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
   liftDeg(90, 0);
   inchDrive(-12);
   gyroturn(-90);
-  inchDrive(2.25 * UNITSIZE);
+  inchDrive(2.3333333 * UNITSIZE);
+  inchDrive(-8);
   // PLATFORM ALLIANCE GOAL
-  inchDrive(-6);
   gyroturn(-45);
-  inchDrive(1.41421 * UNITSIZE); // sqrt 2 units
-  gyroturn(45);
+  goTo(2.75, 4);
+  gyroturn(90 - facing);
   inchDrive(6);
   claw(true);
   liftDeg(-95, 0);
@@ -429,23 +428,22 @@ void auton() {
   // GET SECOND YELLOW
   gyroturn(90);
   mogoDeg(-90);
-  inchDrive(16);
+  inchDrive(-20);
   claw(false);
   // PLATFORM FIRST YELLOW
   liftDeg(90, 0);
-  mogoDeg(90);
-  inchDrive(-5 / 3 * UNITSIZE - 3); // about 1 + 2/3 units with some inches extra so that the spin doesn't move it
-  inchDrive(3);
+  mogoDeg(90, 0);
+  goTo(2, 4, 0);
+  inchDrive(6);
   gyroturn(-90);
   inchDrive(6);
   claw(true);
   liftDeg(-95,0);
   inchDrive(-6);
   // GET LAST ALLIANCE
-  gyroturn(-90);
-  inchDrive(11);
+  goTo(1.75, 4);
   claw(false);
-  liftDeg(90,0);
+  liftDeg(90, 0);
   // PLATFORM LAST ALLIANCE
   inchDrive(-11 / 6 * UNITSIZE - 3); // about 1 + 5/6 units
   gyroturn(90);
@@ -491,10 +489,10 @@ void auton() {
   inchDrive(4 * UNITSIZE);
   gyroturn(-90);
   inchDrive(0.75 * UNITSIZE);
-  liftDeg(-90,0); // bring down the platform
+  liftDeg(-90,3000); // bring down the platform
   // PARK
   inchDrive(1 * UNITSIZE);
-  balance();
+  balance();*/
 }
 
 //driver controls,dont change unless your jaehoon or sean
@@ -565,13 +563,6 @@ void driver() {
   }
 }
 
-    
-    
-
-
-  
-
-  
 int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(auton);
