@@ -135,7 +135,7 @@ double minRots() {
 }
 
 std::vector<double> getPos() {
-  return {(GPS.yPosition(inches) + 0 * - 20.8503937) / -24 + 2, (GPS.xPosition(inches) +0* 54.594488189) / 24};
+  return {GPS.xPosition(inches) / 24 - 2.5, GPS.yPosition(inches) / 24 - 2.5};
 }
 
 void brakeDrive() {
@@ -374,27 +374,28 @@ void goTo(double x2, double y2, bool isBackward = false) {
   // point towards location
 
   std::vector<double> pos = getPos();
-  double x1 = pos[0];
-  double y1 = pos[1];
 
-  double distX = x2 - x1;
-  double distY = y2 - y1;
-
-  double dir = (180 / pi * atan(distX / distY)) - Gyro.rotation(degrees);
-
-  dir += (dir < 0 ? 1 : -1) * isBackward * 180;
-  dir += (dir < 0 ? 1 : -1) * (y2 >= y1) * 180;
+  double distX = x2 - pos[0];
+  double distY = y2 - pos[1];
+  /* 
+  first finds the direction that the robot needs to face, 
+  then converts it from radians to degrees, 
+  then find out how much the robot needs to turn to get there, 
+  then add 180 degrees as if the robbot needs to be backwards or y2 - y1 > 0
+  */
+  double dir = getDir((y2 >= pos[1] - isBackward) * 180 + (180 / pi * atan(distX / distY)) - Gyro.rotation(degrees));
 
   gyroturn(dir, 1);
 
   Brain.Screen.printAt(0, 40, "(%0.3f, %0.3f), (%0.3f, %0.3f), (%0.3f, %0.3f)", x1, y1, x2, y2, distX, distY);
 
   // go to location
-  //inchDrive((isBackward ? -24 : 24) * sqrt(distX * distX + distY * distY));
+  inchDrive((isBackward ? -24 : 24) * sqrt(distX * distX + distY * distY));
 }
 
 
-// This auton is the skills auton,not fully tested
+// This auton is the skills auton, not fully tested
+// shut up it works... kinda
 void auton() {
   backHook.set(false);
   picasso.set(false);
