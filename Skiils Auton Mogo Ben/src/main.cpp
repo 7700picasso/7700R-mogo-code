@@ -106,6 +106,17 @@ struct Integral {
   }
 };
 
+double getDir(double dir) // converts a value to a direction from -180 to 180 degree
+{
+  double output = (180 - dir) / 360 - floor( (180 - dir) / 360 );
+  while (output < 0)
+  {
+    dir += 360,
+    output = (180 - dir) / 360 - floor( (180 - dir) / 360 );
+  }
+  return 180 - output;
+}
+
 double minRots() {
   double rots[] = {
     leftDrive1.position(rev), leftDrive2.position(rev), leftmiddle.position(rev),
@@ -120,6 +131,10 @@ double minRots() {
   }
 
   return min;
+}
+
+std::vector<double> getPos() {
+  return {(GPS.yPosition(inches) + 0 * - 20.8503937) / -24 + 2, (GPS.xPosition(inches) +0* 54.594488189) / 24};
 }
 
 void brakeDrive() {
@@ -357,28 +372,24 @@ void gyroturn(double target, double accuracy = 1.5) { // idk maybe turns the rob
 void goTo(double x2, double y2, bool isBackward = false) {
   // point towards location
 
-  double x1 = GPS.xPosition(inches) / 24;
-  double y1 = GPS.yPosition(inches) / 24;
+  std::vector<double> pos = getPos();
+  double x1 = pos[0];
+  double y1 = pos[1];
 
   double distX = x2 - x1;
   double distY = y2 - y1;
 
-  double dir = (isBackward + (y2 >= y1)) * 180 + (180 / pi * atan(distX / distY)) - Gyro.rotation(degrees);
+  double dir = (180 / pi * atan(distX / distY)) - Gyro.rotation(degrees);
 
-  // change dir to somehting between -180 and 180
-  double tmp = dir;
-  tmp = (180 - dir) / 360 - floor( (180 - dir) / 360 );
-  while (tmp < 0)
-  {
-    dir += 360,
-    tmp = (180 - dir) / 360 - floor( (180 - dir) / 360 );
-  }
-  dir = 180 - tmp;
+  dir += (dir < 0 ? 1 : -1) * isBackward * 180;
+  dir += (dir < 0 ? 1 : -1) * (y2 >= y1) * 180;
 
   gyroturn(dir, 1);
 
+  Brain.Screen.printAt(0, 40, "(%0.3f, %0.3f), (%0.3f, %0.3f), (%0.3f, %0.3f)", x1, y1, x2, y2, distX, distY);
+
   // go to location
-  inchDrive((isBackward ? -24 : 24) * sqrt(distX * distX + distY * distY));
+  //inchDrive((isBackward ? -24 : 24) * sqrt(distX * distX + distY * distY));
 }
 
 
@@ -395,8 +406,12 @@ void auton() {
 
   // FIRST ALLIANCE (dont picasso)
   brakeDrive(); // set motors to brake
+  
+    goTo(3,4);
+  while (1){
+    Brain.Screen.printAt(0, 40, "(%0.3f, %0.3f), (%0.3f, %0.3f), (%0.3f, %0.3f)", getPos()[0], getPos()[1]);
+  }
 
-  goTo(0,0);
   /*mogoTime(-100, 750, false); // lower lift for 750 msec
   inchDrive(-5 / 3 * UNITSIZE);
   mogoDeg(90, 400); // raise by 90 degrees
