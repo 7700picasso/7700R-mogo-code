@@ -17,19 +17,24 @@
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
 // Controller1          controller                    
-// leftDrive1           motor         10              
-// leftDrive2           motor         20              
-// rightDrive1          motor         12              
-// rightDrive2          motor         19              
+// leftDrive1           motor         7               
+// leftDrive2           motor         3               
+// leftmiddle           motor         5               
+// rightDrive1          motor         6               
+// rightDrive2          motor         2               
+// rightmiddle          motor         4               
 // amogus               motor         18              
 // lift1                motor         1               
 // backHook             digital_out   H               
 // claw                 digital_out   G               
+// Inertial21           inertial      21              
 // picasso              digital_out   A               
-// Gyro                 inertial      17              
+// Gyro                 inertial      19              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
+#include <vector>
+#include <math.h>
 
 using namespace vex;
 
@@ -37,17 +42,22 @@ using namespace vex;
 competition Competition;
 
 // define your global Variables here
-float pi=3.14;
-float Diameter = 3.25;
+long double pi = 3.1415926535897932384626433832795028841971693993751058209749445923; // much more accurate than 3.14
+double Diameter = 3.25;
 
-//dont touch
-//Diameter is the wheel
-//pie is pie dumbass
+// global vars for auton
+double x = 0, y = 0; // x and y pos of robot relative to start pos.
+const uint8_t UNITSIZE = 24;
 
-
+/*
+dont touch
+Diameter is the wheel
+pie is pie dumbass
+*/
 
 void pre_auton(void) {
   vexcodeInit();
+  Gyro.calibrate();
   wait(2000, msec);
 
   // All activities that occur before the competition starts
@@ -59,13 +69,52 @@ void drive(int lspeed, int rspeed, int wt){
   
   leftDrive1.spin(forward, lspeed, pct);
   leftDrive2.spin(forward, lspeed, pct);
+  leftmiddle .spin(forward, lspeed, pct);
   rightDrive1.spin(forward, rspeed, pct);
- rightDrive2 .spin(forward, rspeed, pct);
+  rightDrive2 .spin(forward, rspeed, pct);
+  rightmiddle .spin(forward, rspeed, pct);
   wait(wt, msec);
 }
 //use to go forward,backwards,left right etc,turning if your stupid
 //use inchdrive to go forward and backwards,use gyro to turn
 
+struct Integral {
+  std::vector<double> values;
+  uint16_t size = 1;
+
+  void innit() {
+    values = {};
+
+    for (int i = 0; i < size; i++)
+      values.push_back(0);
+  }
+
+  void addVal(double val) {
+    for (int i = size; i > 0; --i)
+      values[i] = values[i - 1];
+    values[0] = val;
+  }
+
+  double mean() {
+    double sum = 0;
+    for (int i = 0; i < size; i++)
+      sum += values[i];
+    return sum / size;
+  }
+};
+
+//use to go forward,backwards,left right etc,turning if your stupid
+//use inchdrive to go forward and backwards,use gyro to turn
+
+void brakeDrive() {
+  leftDrive1.stop(brake);
+  leftDrive2.stop(brake);
+  leftmiddle.stop(brake);
+  rightDrive1.stop(brake);
+  rightDrive2.stop(brake);
+  rightmiddle.stop(brake);
+  //break code for the gryo balance code
+}
 
 void lift(int speed, int wt ){
   lift1.spin(forward, speed, pct);
@@ -126,6 +175,7 @@ void picassos (bool open)
 void inchDrive(float target, int speed){
   leftDrive1.setPosition(0,  rev);
     leftDrive2.setPosition(0,  rev);//might only need 1 of 3 of these but im a dumbass so leave it 
+  leftmiddle.setPosition(0,  rev);
   float inches = 0.0;
   float turns= 0.0;
   float error = target; 
@@ -146,7 +196,7 @@ void inchDrive(float target, int speed){
    //fabs = absolute value
     //heading= Gyro.rotation(degrees);
   drive(speed, speed, 10);
-      turns =leftDrive1.position(rev);
+      turns =leftmiddle.position(rev);
     inches = turns * Diameter * pi;   //took and hour to fix this I think,was off by like 10 inches lol
     olderror=error;
     error = target-inches; //the error gets smaller when u reach ur target
@@ -163,39 +213,34 @@ void inchDrive(float target, int speed){
   drive(0,0,0);
   }
 //if gyro needs calibrating add a 10ms wait or something
+ void balance() {
+  double pitch = Gyro.pitch(degrees);
+  double oldpitch = pitch;                //work in progress code
+  inchDrive(20, 100);
+  Brain.Screen.clearScreen();
+  double Kp = 4;
+  double Ki = 0.5;
+  double Kd = 90;
+  double speed;
 
-void breakdrive()
-{
-leftDrive1.stop(brake);
-leftDrive2.stop(brake);
-rightDrive1.stop(brake);
-rightDrive2.stop(brake);
+  Integral pitches;
+  pitches.size = 10;
+  pitches.innit();
 
-}
-void balance()
+double stopAng = 5; // stop when fabs(pitch) is at most 5°
+while(fabs(pitch) > stopAng)
 {
- float pitch=Gyro.pitch(deg);
- float oldpitch=pitch;
- inchDrive(10, 100);
-     Brain.Screen.clearScreen();
-     float kp=1;
-      float kd = 20.0;
-
-float d=0.5;
-while(fabs(pitch)>d)
-{
-  float speed = kp*pitch+kd*(pitch-oldpitch);
+  pitch = Gyro.pitch(degrees);
+  pitches.addVal(pitch);
+  speed = Kp * pitch + Ki * pitches.mean() + Kd * (pitch - oldpitch);
   drive(speed, speed, 10);
-  oldpitch=pitch;
-    pitch = Gyro.pitch(deg);
-    Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
-
+  oldpitch = pitch;
+  Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
 }
-breakdrive();
+brakeDrive();
 Brain.Screen.printAt(1, 150, "i am done ");
-
 }
- 
+
 
 void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
  float kp=2.0;
@@ -223,17 +268,10 @@ void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont u
 
 //wow maybe the auton code,this auton is the left side auton,works well
 void auton() {
-  claw.set(true); //open claw
-  wait(100, msec);//wait
-  inchDrive(55, 100);//go forward 55 inches
- Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
-  Brain.Screen.print("I'm dumb");//this shows the code works 
-  claw.set(false);//close claw,just picked up that yellow mogo
-  wait (20, msec);//wait dumbass
-  inchDrive(-55, 100);//go backwards 30 inches
+ 
  
 
-
+  
 
 
 
@@ -313,14 +351,10 @@ void driver() {
     {
       picasso.set(true);
     }
-
-    if (Controller1.ButtonDown.pressing())  
+    if (Controller1.ButtonDown.pressing())  //mogo up
     {
-      
-    balance();
-     
+      balance();
     }
-    
 
     wait(20, msec); // dont waste air 
   }

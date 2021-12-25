@@ -14,6 +14,9 @@ extern digital_out backHook;
 extern digital_out claw;
 extern digital_out picasso;
 extern inertial Gyro;
+extern motor leftmiddle;
+extern motor rightmiddle;
+extern gps GPS21;
 
 /**
  * Used to initialize code/tasks/devices added using tools in VEXcode Pro.

@@ -4,7 +4,7 @@
 /*    Author:       Sean Jaehoon and Saif                                     */
 /*    Created:      sometime                                                  */
 /*    Description:  7700R code 2021-2022  Skills                              */
-/*               Benjamin 12-20-21                                            */
+/*               saif 12-6-21                                                 */
 /*----------------------------------------------------------------------------*/
 //7700R
 //Sean
@@ -103,6 +103,21 @@ struct Integral {
   }
 };
 
+double minRots() { // accurate way to get motor position 
+  double currMin = 1000000000; // no motor will have that many rotations
+  double motors[] = {
+    leftDrive1.position(rev), leftmiddle.position(rev), leftDrive2.position(rev),
+    rightDrive1.position(rev), rightmiddle.position(rev), rightDrive2.position(rev)
+  };
+
+  for (int i = 0; i < 6; i++) {
+    if (motors[i] < currMin) {
+      currMin = motors[i];
+    }
+  }
+  return currMin;
+}
+
 void brakeDrive() {
   leftDrive1.stop(brake);
   leftDrive2.stop(brake);
@@ -122,27 +137,22 @@ void coastDrive() {
   rightmiddle.stop(coast);
 }
 
-
-void lift(double angle, int WT = -1, int speed = 100) {
-  lift1.setVelocity(speed, percent);
-  lift1.setStopping(hold);
-
-  lift1.spinFor(forward, 9 * angle, degrees, WT == -1);
-  
-  if (WT != -1) {
-    wait(WT,msec);
-  }
-  else {
+void lift(int speed, int wt, bool stop = true){
+  lift1.spin(forward, speed, pct);
+  wait(wt, msec);
+  if (stop)
     lift1.stop(hold);
-  }
 }
 
-void lift(int speed, int duration, bool stop) {//, int WT = -1) {
-  lift1.spin(forward,speed,percent);
-  wait(duration,msec);
-  if (stop) {
+void lift2(double angle, double speed = 100, int WT = -1) { // WT of -1 means wait for completion
+  // gear ratio is 1 / 9
+  lift1.setVelocity(speed, percent);
+  lift1.spinFor(forward, 9 * angle, degrees, WT == -1);
+
+  if (WT >= 0)
+    wait(WT, msec);
+  else
     lift1.stop(hold);
-  }
 }
 
 //makes lift go up or down
@@ -150,26 +160,23 @@ void lift(int speed, int duration, bool stop) {//, int WT = -1) {
 //example lift(-100,1200);  so lift 100% for 1200 msc
 // 100 is up and -100 is down,or other way around,you can figure that out
 
-void mogo(double angle, int WT = -1, int speed = 100) {
-  amogus.setVelocity(speed, percent);
-  amogus.setStopping(hold);
+void mogo(int speed, int wt, bool stop = true) {
+  amogus.spin(forward, speed, pct);
+  wait(wt, msec);
 
-  amogus.spinFor(forward, 5 * angle, degrees, WT == -1);
-  
-  if (WT != -1) {
-    wait(WT,msec);
-  }
-  else {
+  if (stop)
     amogus.stop(hold);
-  }
 }
 
-void mogo(int speed, int duration, bool stop = false) {//, int WT = -1) {
-  amogus.spin(forward,speed,percent);
-  wait(duration,msec);
-  if (stop) {
+void mogo2(double angle, double speed = 100, int WT = -1) { // WT of -1 is wait for completion
+  // gear ratio is 1/5
+  amogus.setVelocity(speed, percent);
+  amogus.spinFor(forward, 5 * angle, degrees, WT == -1);
+
+  if (WT >= 0)
+    wait(WT, msec);
+  else
     amogus.stop(hold);
-  }
 }
 
 //makes mogo go up or down
@@ -236,7 +243,7 @@ void inchDrive(double target, double accuracy = 1) {
   inchDrive(-55, 100); go 55in backwards at 100%
   */
 
-  while(fabs(error) > accuracy){
+  while(fabs(error) > accuracy) {
     // did this late at night but this while is important 
     // fabs = absolute value
     error = target - leftmiddle.position(rev) * Diameter * pi; //the error gets smaller when u reach ur target
@@ -266,29 +273,27 @@ void inchDrive(double target, double accuracy = 1) {
 void balance() {
   double pitch = Gyro.pitch(degrees);
   double oldpitch = pitch;                //work in progress code
-  inchDrive(10, 100);
   Brain.Screen.clearScreen();
   double Kp = 4;
   double Ki = 1;
-  double Kd = 90;
+  double Kd = 110;
   double speed;
 
   Integral pitches;
   pitches.size = 10;
   pitches.innit();
 
-double stopAng = 5; // stop when fabs(pitch) is at most 5°
-while(fabs(pitch) > stopAng)
-{
-  pitch = Gyro.pitch(degrees);
-  pitches.addVal(pitch);
-  speed = Kp * pitch + Ki * pitches.mean() + Kd * (pitch - oldpitch);
-  drive(speed, speed, 10);
-  oldpitch = pitch;
-  Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
-}
-brakeDrive();
-Brain.Screen.printAt(1, 150, "i am done ");
+  double stopAng = 2; // stop when fabs(pitch) is at most 5°
+  while(fabs(pitch) > stopAng) {
+    pitch = Gyro.pitch(degrees);
+    pitches.addVal(pitch);
+    speed = Kp * pitch + Ki * pitches.mean() + Kd * (pitch - oldpitch);
+    drive(speed, speed, 10);
+    oldpitch = pitch;
+    Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
+  }
+  brakeDrive();
+  Brain.Screen.printAt(1, 150, "i am done ");
 }
 
 // modded gyro code, sadge
@@ -330,104 +335,18 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
 void auton() {
   double facing = 0;
 
-  backHook.set(false);
-  picasso.set(false);
-
   while (Gyro.isCalibrating()) { // dont start until gyro is calibrated
     wait(10, msec);
   }
 
   Gyro.setRotation(0, degrees);
-
-  // FIRST ALLIANCE (dont picasso)
-  brakeDrive(); // set motors to brake
-  mogo(-100, 750, false); // lower lift for 750 msec
-  inchDrive(-17);
-  mogo(45.0, 500); // raise by 45 degrees
-  inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
-  // OTHER ALLIANCE
-  gyroturn(-90, facing);
-  claw.set(true); // open claw
-  inchDrive(-UNITSIZE);
-  gyroturn(-90, facing);
-  inchDrive(3.333 * UNITSIZE);
-  claw.set(false);
-  // SHOVE FIRST YELLOW TO THE OTHER SIDE
-  lift(90.0, 20);
-  inchDrive(-8);
-  gyroturn(-90, facing);
-  inchDrive(2.25 * UNITSIZE);
-  // PLATFORM ALLIANCE GOAL
-  inchDrive(-6);
-  gyroturn(-45,facing);
-  inchDrive(1.41421 * UNITSIZE);
-  gyroturn(45,facing);
-  inchDrive(6);
-  claw.set(true);
-  lift(-95.0, 20);
-  inchDrive(-6); //
-  // GET SECOND YELLOW
-  gyroturn(90, facing);
-  mogo(-45);
-  inchDrive(16);
-  claw.set(false);
-  // PLATFORM FIRST YELLOW
-  lift(90.0, 0);
-  mogo(90.0, 20);
-  inchDrive(-1.667 * UNITSIZE);
-  gyroturn(-90, facing);
-  inchDrive(6);
-  claw.set(true);
-  lift(-95.0, 20);
-  inchDrive(-6);
-  // GET LAST ALLIANCE
-  while (lift1.position(degrees) > 270) { // make sure that the lift is low enought b4 continuing
-    wait(10, msec);
-  }
-  gyroturn(-90, facing);
-  inchDrive(8);
-  claw.set(false);
-  lift(90.0, 20);
-  // PLATFORM LAST ALLIANCE
-  inchDrive(-1.83333 * UNITSIZE);
-  gyroturn(90,facing);
-  inchDrive(6);
-  claw.set(true);
-  // GET OTHER SHORT YELLOW
-  lift(-95.0, 20);
-  inchDrive(-6);
-  gyroturn(-135, facing);
-  inchDrive(2 * UNITSIZE);
-  claw.set(false);
-  // PLATFORM OTHER SHORT YELLOW
-  lift(90.0, 20);
-  inchDrive(-2 * UNITSIZE);
-  gyroturn(45, facing);
-  inchDrive(-6);
-  gyroturn(90, facing);
-  inchDrive(6);
-  claw.set(true);
-  // GET TALL GOAL
-  lift(-95.0,20);
-  inchDrive(-6);
-  gyroturn(170.5376778, facing);
-  inchDrive(1.520690633 * UNITSIZE);
-  claw.set(false);
-  // GET ALLIANCE GOAL NEAR PLATFORM
-  gyroturn(35.53767779,facing);
-  mogo(-95.0, 0);
-  inchDrive(-2.474873734 * UNITSIZE);
-  gyroturn(-90,facing);
-  inchDrive(-UNITSIZE);
-  mogo(100);
   picasso.set(false);
-
+  brakeDrive(); // set motors to brake
   // PICCASO FIRST ALLIANCE GOAL
-  /*mogo(-100, 1200);
+  mogo(-100, 1200);
   inchDrive(-17);
-  mogo(100, 1500, false);
+  mogo2(90);
   picasso.set(true);
-  mogo(0, 0);
   inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
   // GRAB FIRST NEUTRAL GOAL
   gyroturn(90, facing);
@@ -440,6 +359,7 @@ void auton() {
   lift(100, 1700);
   inchDrive(43); // WAS 38
   lift(-60, 400);
+  // SECOND GOAL
   claw.set(true);
   lift(60, 400);
   inchDrive(-22);   
@@ -447,26 +367,38 @@ void auton() {
   lift(-100, 1500);
   inchDrive(28);
   claw.set(false);
-  inchDrive(-10);
   // platform it
+  inchDrive(-10);
   gyroturn(110, facing);
   lift(100, 1700);
   inchDrive(39);
   lift(-60,400);
   claw.set(true);
+  // last yellow
   lift(60, 400);
   lift(0, 0);
   inchDrive(-30);
-  // middle goal
   gyroturn(80, facing);
-  mogo(-100,1200);
+  mogo2(-90);
   inchDrive(-40);
-  mogo(100, 1500);
+  mogo2(50);
+  // alliance goal
   gyroturn(-100, facing);
   lift(-100, 1500);
   inchDrive(20);
-  claw.set(false);*/
-}
+  claw.set(false);
+  // go to other side
+  gyroturn(140 - facing, facing);
+  inchDrive(-6.4 * UNITSIZE);
+  gyroturn(-90 - facing, facing);
+  // shove alliance goal to other side
+  inchDrive(3 * UNITSIZE);
+  inchDrive(-3 * UNITSIZE);
+  // park
+  gyroturn(-90, facing);
+  inchDrive(UNITSIZE);
+  balance(); // idk if this works i hope it does plz work
+} 
 
 //driver controls,dont change unless your jaehoon or sean
 void driver() {
@@ -535,13 +467,6 @@ void driver() {
     wait(20, msec); // dont waste air 
   }
 }
-
-    
-    
-
-
-  
-
   
 int main() {
   // Set up callbacks for autonomous and driver control periods.

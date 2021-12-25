@@ -18,11 +18,10 @@ motor rightmiddle = motor(PORT4, ratio18_1, false);
 motor amogus = motor(PORT18, ratio36_1, false);
 motor lift1 = motor(PORT1, ratio36_1, true);
 digital_out backHook = digital_out(Brain.ThreeWirePort.H);
-digital_out Claw = digital_out(Brain.ThreeWirePort.G);
+digital_out claw = digital_out(Brain.ThreeWirePort.G);
 inertial Inertial21 = inertial(PORT21);
 digital_out picasso = digital_out(Brain.ThreeWirePort.A);
 inertial Gyro = inertial(PORT19);
-gps GPS = gps(PORT9, -137.5, -197.5, mm, 0);
 
 // VEXcode generated functions
 // define variable for remote controller enable/disable

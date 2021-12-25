@@ -33,8 +33,6 @@
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
-#include <vector>
-#include <math.h>
 
 using namespace vex;
 
@@ -42,16 +40,14 @@ using namespace vex;
 competition Competition;
 
 // define your global Variables here
-const long double pi = 3.1415926535897932384626433832795028841971693993751058209749445923;
-const double Diameter = 3.25;
+float pi=3.14;
+float Diameter = 3.25;
 
 //dont touch
 //Diameter is the wheel
-//pie is pie dumbass it also tastes good bc thats the wrong pi
+//pie is pie dumbass
 
-// for auton 
-double x = 0, y = 0;
-const uint8_t UNITSIZE = 24; // tile size
+
 
 void pre_auton(void) {
   vexcodeInit();
@@ -66,102 +62,47 @@ void drive(int lspeed, int rspeed, int wt){
   
   leftDrive1.spin(forward, lspeed, pct);
   leftDrive2.spin(forward, lspeed, pct);
-  leftmiddle .spin(forward, lspeed, pct);
+ leftmiddle .spin(forward, lspeed, pct);
   rightDrive1.spin(forward, rspeed, pct);
-  rightDrive2 .spin(forward, rspeed, pct);
-  rightmiddle .spin(forward, rspeed, pct);
+ rightDrive2 .spin(forward, rspeed, pct);
+ rightmiddle .spin(forward, rspeed, pct);
   wait(wt, msec);
 }
 //use to go forward,backwards,left right etc,turning if your stupid
 //use inchdrive to go forward and backwards,use gyro to turn
 
-struct Integral {
 
-  std::vector<double> values;
-  uint8_t size = 1;
 
-  // adds zero to everything
-  void innit(double startVal) {
-    values = {};
-
-    for (int i = 0; i < size; i++)
-      values.push_back(startVal);
-  }
-
-  // inserts a new value in the front, gets rid of the last value, and shifts everything up one index
-  void addVal(double val) {
-    for (int i = size; i > 0; --i)
-      values[i] = values[i - 1];
-    values[0] = val;
-  }
-  // gets the average of the values
-  double mean() {
-    double sum = 0;
-    for (int i = 0; i < size; i++)
-      sum += values[i];
-    return sum / size;
-  }
-};
-
-/*double MinRots() {
-  double rotations[] = {leftDrive1.position(rev), leftmiddle.position(rev), leftDrive2.position(rev), leftDrive1.position(rev), leftmiddle.position(rev), rightDrive2.position(rev)};
-}*/
-
-void brakeDrive() {
-  leftDrive1.stop(brake);
-  leftDrive2.stop(brake);
-  leftmiddle.stop(brake);
-  rightDrive1.stop(brake);
-  rightDrive2.stop(brake);
-  rightmiddle.stop(brake);
-  //break code for the gryo balance code
+void lift(int speed, int wt ){
+  lift1.spin(forward, speed, pct);
+  
+  wait(wt, msec);
 }
-
-void coastDrive() {
-  leftDrive1.stop(coast);
-  leftDrive2.stop(coast);
-  leftmiddle.stop(coast);
-  rightDrive1.stop(coast); //coast drive
-  rightDrive2.stop(coast); //saif put notes here with examples 
-  rightmiddle.stop(coast);
-}
-
-void lift(double angle, int WT = -1, double speed = 100) { // WT of -1 means wait for completion
-  // gear ratio is 1 / 9
-  lift1.setVelocity(speed, percent);
-  lift1.spinFor(forward, 9 * angle, degrees, WT == -1); // wait for competion is determined by whether or not WT is -1
-
-  if (WT >= 0)
-    wait(WT, msec);
-  else
-    lift1.stop(hold);
-}
-
 //makes lift go up or down
-// its the angle to move the lift by then wait time then speed
-// example lift(90,1200);  so lift 90 degrees up for 1200 msc
-// example 2: lift(-90,-1,100); lift goes down 90 degrees, waits until it's done, goes at 100% speed
+// its the lift speed then wait time
+//example lift(-100,1200);  so lift 100% for 1200 msc
+// 100 is up and -100 is down,or other way around,you can figure that out
 
-void mogo(double angle, int WT = -1, double speed = 100) { // WT of -1 is wait for completion
-  // gear ratio is 1/5
-  amogus.setVelocity(speed, percent);
-  amogus.spinFor(forward, 5 * angle, degrees, WT == -1);
 
-  if (WT >= 0)
-    wait(WT, msec);
-  else
-    amogus.stop(hold);
+
+
+void mogo (int speed, int wt){
+  amogus.spin(forward, speed, pct);
+  
+  
+  wait(wt, msec);
 }
-
 //makes mogo go up or down
 // its the lift speed then wait time
-//mogo(100, 1500, false);  so mogo 100% for 1500 msc with some werid stop thing
+//example mogo(-100,1200);  so mogo 100% for 1200 msc
 // 100 is up and -100 is down,I know this 
 
 
-void clawopen (bool open) {
-  claw.set (open);
-}
+
+
+
+void clawopen (bool open)
+{claw.set (open);}
 
 //idk maybe opens and closes the claw
 //true is open and false is close
@@ -169,9 +110,8 @@ void clawopen (bool open) {
 //claw.set(true);    open
 //claw.set(false);   close
 
-void backhooks (bool open) {
-  backHook.set (open);
-}
+void backhooks (bool open)
+{backHook.set (open);}
 
 //opens and closes the back hook
 //true is open and false is close
@@ -180,9 +120,8 @@ void backhooks (bool open) {
 //backHook.set(false);   close
 
 
-void picassos (bool open) {
-  picasso.set(open);
-}
+void picassos (bool open)
+{picasso.set (open);}
 
 //opens and closes thee picasso
 //true is open and false is close
@@ -190,149 +129,109 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(double target, double accuracy = 1) {
+void inchDrive(float target, int speed){
   leftDrive1.setPosition(0,  rev);
-  leftDrive2.setPosition(0,  rev); // might only need 1 of 3 of these but im a dumbass so leave it 
+    leftDrive2.setPosition(0,  rev);//might only need 1 of 3 of these but im a dumbass so leave it 
   leftmiddle.setPosition(0,  rev);
+  float inches = 0.0;
+  float turns= 0.0;
+  float error = target; 
+  float olderror = error; 
+  float kp=10;
+  float kd = 20.0;
+  
+  //dont use the drive function you dumbass
+  //use inchdrive,this took me a while to code :(
+  //its target/inches/amount then speed/percentage
+  //examples
+  //inchDrive(55, 100); go 55in forward at 100%
+  //inchDrive(-55, 100); go 55in backwards at 100%
 
-  double 
-    speed,
-    inches = 0,
-    error = target,
-    olderror = error,
-    Kp = 50 / 3, // about 16.667, was previously 10
-    Ki = 5, // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
-    Kd = 40 / 3; // about 13.333, was previously 20.0
 
-  Integral errors;
-  errors.size = 25; // takes about 0.25 seconds to fill up
-  errors.innit(error);
-
-  /*
-  dont use the drive function you dumbass AND DONT USE "//" for multiple lines
-  use inchdrive,this took me a while to code :(
-  its target/inches/amount then speed/percentage
-  examples
-  inchDrive(55, 100); go 55in forward at 100%
-  inchDrive(-55, 100); go 55in backwards at 100%
-  */
-
-  while(fabs(error) > accuracy){
-    // did this late at night but this while is important 
-    // fabs = absolute value
-    error = target - leftmiddle.position(rev) * Diameter * pi; //the error gets smaller when u reach ur target
-    errors.addVal(error);
-    speed = Kp * error + Ki * errors.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
-    drive(speed, speed, 10);
-    olderror = error;
- //inches = turns * Diameter * pi;
-    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", leftmiddle.position(rev)); //math fun
-    Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
-    Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
-    Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
-  }
-  brakeDrive();
-  // update x and y
-  double 
-    r = leftmiddle.position(rev) * Diameter * pi / UNITSIZE,
-    theta = Gyro.rotation(degrees) * pi / 180;
-  x += r * cos(theta), y += r * sin(theta);
-
-  Brain.Screen.printAt(50, 180, "Position:   (%.3f, %.3f)", x, y);
-}
-
-//if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
-//1 sec if your good
-
-void balance() {
-  double pitch = Gyro.pitch(degrees);
-  double oldpitch = pitch;                //work in progress code
-  inchDrive(10, 100);
-  Brain.Screen.clearScreen();
-  double Kp =  4;
-  double Ki = 1;
-  double Kd = 90;
-  double speed;
-
-  Integral pitches;
-  pitches.size = 10;
-  pitches.innit(pitch);
-
-double stopAng = 5; // stop when fabs(pitch) is at most 5°
-while(fabs(pitch) > stopAng)
-{
-  pitch = Gyro.pitch(degrees);
-  pitches.addVal(pitch);
-  speed = Kp * pitch + Ki * pitches.mean() + Kd * (pitch - oldpitch);
+  while(fabs(error)>1.0){
+    //did this late at night but this while is important 
+   //fabs = absolute value
+    //heading= Gyro.rotation(degrees);
   drive(speed, speed, 10);
-  oldpitch = pitch;
-  Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
-}
-brakeDrive();
-Brain.Screen.printAt(1, 150, "i am done ");
-}
+      turns =leftmiddle.position(rev);
+    inches = turns * Diameter * pi;   //took and hour to fix this I think,was off by like 10 inches lol
+    olderror=error;
+    error = target-inches; //the error gets smaller when u reach ur target
+ //inches = turns * Diameter * pi;
+    
+    speed = kp*error+kd*(error-olderror); //big error go fast slow error go slow 
 
-// modded gyro code, sadge
-void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
-  double Kp = 1.25; // was 2.0
-  double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
-  double Kd = 1.0; // was 16.0
+    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", turns); //math fun
+    Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
+     Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
+     Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
+  }
+   
+  drive(0,0,0);
+  }
+//if gyro needs calibrating add a 10ms wait or something
  
-  double currentDir = Gyro.rotation(degrees);
-  double speed = 100;
-  double error = target;
-  double olderror = error;
 
-  Integral directions;
-  directions.size = 15;
-  directions.innit(error);
-  
-  idealDir += target;
-  target = currentDir + idealDir - Gyro.rotation(degrees);
-  
-  while(fabs(error) > 1.25){ //fabs = absolute value while loop again
-    currentDir = Gyro.rotation(degrees);
-    error = target - currentDir; //error gets smaller closer you get,robot slows down
-    directions.addVal(error);
-    speed = Kp * error + Ki * directions.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
+void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+ float kp=2.0;
+ float kd = 16.0;
+  Gyro.setRotation(0, degrees); //centers,calibrates gyro to 0
+  float heading = 0.0;
+  float speed = 100;
+  float error = target;
+  float olderror=error;
+  while(fabs(error)>2.0){ //fabs = absolute value while loop again
+    heading= Gyro.rotation(degrees);
+    olderror=error;
+    error = target-heading; //error gets smaller closer you get,robot slows down
     drive(speed, -speed, 10);
-    Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir); //math thing again,2 decimal places
+    speed = kp*error+kd*(error-olderror); //big error go fast slow error go slow 
+    Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", heading); //math thing again,2 decimal places
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     //all ths print screen helps test to make sure gyro not broke
-    olderror = error;
   }
-  brakeDrive();
-  currentDir = Gyro.rotation(degrees); //prints the gyro rotation degress
-  Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir);
+  drive(0,0,0);
+  heading= Gyro.rotation(degrees);//prints the gyro rotation degress
+  Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", heading);
 }
 
 
 //wow maybe the auton code,this auton is the right side auton,work in progress but works how is 
 void auton() {
-
-  while (Gyro.isCalibrating()) {
-    wait(10,msec);
-  }
-  Gyro.setRotation(0,degrees);
-
-  double facing = 0;
-
   claw.set(true); //open claw
-  picasso.set(false); // open the picasso who forgot to put this bruh
-  inchDrive(55);//go forward 55 inches
-  Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
+  wait(100, msec);//wait
+  inchDrive(55, 100);//go forward 55 inches
+ Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
   claw.set(false);//close claw,just picked up that yellow mogo
-  lift(10, 20); // bring it off a lift bc that might happen with 7700E
-  inchDrive(-30);//go backwards 30 inches
-  gyroturn(-90, facing); //turn 90 degress with the robots back facing the right side mogo
-  inchDrive(10);//drive forward 10 inches to align and have time for the mogo to go down
-  mogo(-90,333);//mogo goes down
-  inchDrive(-25);//drive backwards 25 inches to mogo
-  mogo(90);//pikup mogo
+  wait (20, msec);//wait dumbass
+  inchDrive(-30, 100);//go backwards 30 inches
+ gyroturn(-90); //turn 90 degress with the robots back facing the right side mogo
+  inchDrive(10,100);//drive forward 10 inches to align and have time for the mogo to go down
+  mogo(-100,1200);//mogo goes down
+  inchDrive(-25,100);//drive backwards 25 inches to mogo
+  mogo(100,3000);//pikup mogo
   picasso.set(true);//picasso that mogo
-  mogo(-90);//mogo back down and ready for driver
-  gyroturn(90, facing); //turn facing the field 
+  picasso.set(true);//picasso stupid so again to make sure,fr this fixed it lol
+  mogo(-100,1200);//mogo back down and ready for driver
+   gyroturn(90);//turn facing the field 
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
 }
 
 //driver controls,dont change unless your jaehoon or sean
@@ -371,36 +270,43 @@ void driver() {
       lift1.stop(brakeType::hold); //hold,do nothing if nothing is being pressed
     }
 
-    if (Controller1.ButtonY.pressing() && backHook.value() == 1) //claw down
+    if (Controller1.ButtonY.pressing()) //claw down
     {
       backHook.set(false);
     }
-    else if (Controller1.ButtonB.pressing() && backHook.value() == 0) //claw up or maybe the opposite 
+    else if (Controller1.ButtonB.pressing()) //claw up or maybe the opposite 
     {
       backHook.set(true);
     }
     
-    if (Controller1.ButtonX.pressing() && claw.value() == 1) //claw close
+    if (Controller1.ButtonX.pressing()) //claw close
     {
       claw.set(false);
     }
-    else if (Controller1.ButtonA.pressing()  && claw.value() == 0) //claw open
+    else if (Controller1.ButtonA.pressing()) //claw open
     {
       claw.set(true);
     }
 
-    if (Controller1.ButtonUp.pressing() && picasso.value() == 1) //picasso open or whaever you say
+    if (Controller1.ButtonUp.pressing()) //picasso open or whaever you say
     {
       picasso.set(false);
     }
-    else if (Controller1.ButtonRight.pressing() && picasso.value() == 0) //picasso do opposite
+    else if (Controller1.ButtonRight.pressing()) //picasso do opposite
     {
       picasso.set(true);
     }
 
-    wait(10, msec); // dont waste air 
+    wait(20, msec); // dont waste air 
   }
 }
+
+    
+    
+
+
+  
+
   
 int main() {
   // Set up callbacks for autonomous and driver control periods.
