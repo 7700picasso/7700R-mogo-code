@@ -49,8 +49,6 @@ double Diameter = 3.25;
 // global vars for auton
 const double UNITSIZE = 23.75; // its not 24
 
-#define DEG * 180 / pi
-
 /*
 dont touch
 Diameter is the wheel
@@ -126,10 +124,10 @@ void getPos(double &x, double &y) {
   y = GPS.yPosition(mm) / 600;
 }
 
-double pointTowardsPre(double x1, double y1, double x2, double y2, bool Rev = 0) {
-  double theta = atan((x2 - x1) / (y2 - y1)) DEG - Gyro.rotation(degrees); // get number of degrees robot must turn to point in a certain direction.
-  theta += (theta < 0 ? 1 : -1) * 180 * (y2 >= y1); // then maybe add ±180 to correct it
-  return theta + (theta < 0 ? 1 : -1) * 180 * Rev; // then maybe add ±180 to if its forwards or backwards
+double pointTowardsPre(double x1, double y1, double x2, double y2, bool Reverse = false) { // get the angle at which the robot needs to turn to point towards point (x,y)
+  double theta = atan2((x2 - x1), (y2 - y1)) * 180 / pi - Gyro.rotation(degrees); // get number of degrees robot must turn to point in a certain direction.
+  //theta += (theta < 0 ? 1 : -1) * 180 * (y2 >= y1); // then maybe add ±180 to correct it
+  return theta + (theta < 0 ? 1 : -1) * 180 * Reverse; // then maybe add ±180 to if its backwards
 }
 
 void brakeDrive() {
