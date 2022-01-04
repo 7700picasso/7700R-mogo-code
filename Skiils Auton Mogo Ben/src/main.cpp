@@ -60,11 +60,12 @@ pie is pie dumbass
 void pre_auton(void) {
   vexcodeInit();
   Gyro.calibrate();
+  GPS.calibrate();
   wait(2000, msec);
 
   // All activities that occur before the competition starts
-  //gets pistons down before match
-  //dont touch this 
+  // gets pistons down before match
+  // dont touch this 
 }
 
 void drive(int lspeed, int rspeed, int wt){
@@ -93,7 +94,7 @@ struct Integral {
 
   void addVal(double val) {
     for (int i = size; i > 0; --i)
-      values[i] = values[i - 1] * 0.995;
+      values[i] = values[i - 1] * 0.995; // decreases impact of previous values
     values[0] = val;
   }
 
@@ -105,9 +106,24 @@ struct Integral {
   }
 };
 
+double minRots() {    
+  double rots[] = {
+    leftDrive1.position(rev), leftDrive2.position(rev), leftmiddle.position(rev),
+    rightDrive1.position(rev), rightDrive2.position(rev), rightmiddle.position(rev)
+  };
+  double min = rots[0];
+  
+  for (int i = 1; i < 6; i++) {
+    if (rots[i] < min) {
+      min = rots[i];
+    }
+  }
+  return min;
+}
+
 void getPos(double &x, double &y) {
-  x = GPS.xPosition() / UNITSIZE, 
-  y = GPS.yPosition() / UNITSIZE;
+  x = GPS.xPosition(mm) / 600, 
+  y = GPS.yPosition(mm) / 600;
 }
 
 double pointTowardsPre(double x1, double y1, double x2, double y2, bool Rev = 0) {
@@ -124,6 +140,13 @@ void brakeDrive() {
   rightDrive2.stop(brake);
   rightmiddle.stop(brake);
   //break code for the gryo balance code
+  // actually change brake type
+  leftDrive1.setStopping(brake);
+  leftDrive2.setStopping(brake);
+  leftmiddle.setStopping(brake);
+  rightDrive1.setStopping(brake);
+  rightDrive2.setStopping(brake);
+  rightmiddle.setStopping(brake);
 }
 
 void coastDrive() {
@@ -133,10 +156,17 @@ void coastDrive() {
   rightDrive1.stop(coast); //coast drive
   rightDrive2.stop(coast); //saif put notes here with examples 
   rightmiddle.stop(coast);
+  // actually set brake stop type to coast
+  leftDrive1.setStopping(coast);
+  leftDrive2.setStopping(coast);
+  leftmiddle.setStopping(coast);
+  rightDrive1.setStopping(coast); 
+  rightDrive2.setStopping(coast);
+  rightmiddle.setStopping(coast);
 }
 
 
-void lift(double angle, int WT = -1, int speed = 100) {
+void liftDeg(double angle, int WT = -1, int speed = 100) {
   lift1.setVelocity(speed, percent);
   lift1.setStopping(hold);
 
@@ -150,7 +180,7 @@ void lift(double angle, int WT = -1, int speed = 100) {
   }
 }
 
-void lift(int speed, int duration, bool stop) {//, int WT = -1) {
+void liftTime(int speed, int duration, bool stop) {//, int WT = -1) {
   lift1.spin(forward,speed,percent);
   wait(duration,msec);
   if (stop) {
@@ -163,7 +193,7 @@ void lift(int speed, int duration, bool stop) {//, int WT = -1) {
 //example lift(-100,1200);  so lift 100% for 1200 msc
 // 100 is up and -100 is down,or other way around,you can figure that out
 
-void mogo(double angle, int WT = -1, int speed = 100) {
+void mogoDeg(double angle, int WT = -1, int speed = 100) {
   amogus.setVelocity(speed, percent);
   amogus.setStopping(hold);
 
@@ -177,7 +207,7 @@ void mogo(double angle, int WT = -1, int speed = 100) {
   }
 }
 
-void mogo(int speed, int duration, bool stop = false) {//, int WT = -1) {
+void mogoTime(int speed, int duration, bool stop = false) {//, int WT = -1) {
   amogus.spin(forward,speed,percent);
   wait(duration,msec);
   if (stop) {
@@ -191,8 +221,10 @@ void mogo(int speed, int duration, bool stop = false) {//, int WT = -1) {
 // 100 is up and -100 is down,I know this 
 
 
-void clawopen (bool open) {
-  claw.set (open);
+void claw(bool open) {
+  wait(50 * open, msec);
+  Claw.set(open);
+  wait(50 * !open, msec);
 }
 
 //idk maybe opens and closes the claw
@@ -222,49 +254,43 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(double target, double accuracy = 1) {
-  leftDrive1.setPosition(0,  rev);
-  leftDrive2.setPosition(0,  rev); // might only need 1 of 3 of these but im a dumbass so leave it 
-  leftmiddle.setPosition(0,  rev);
-
-  double 
-    speed,
-    inches = 0,
-    error = target,
-    olderror = error,
-    Kp = 50 / 3, // about 16.667, was previously 10
-    Ki = 5, // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
-    Kd = 40 / 3; // about 13.333, was previously 20.0
-
-  Integral errors;
-  errors.size = 25; // takes about 0.25 seconds to fill up
-  errors.innit();
-
-  /*
-  dont use the drive function you dumbass AND DONT USE "//" for multiple lines
-  use inchdrive,this took me a while to code :(
-  its target/inches/amount then speed/percentage
-  examples
-  inchDrive(55, 100); go 55in forward at 100%
-  inchDrive(-55, 100); go 55in backwards at 100%
-  */
-
-  while(fabs(error) > accuracy){
-    // did this late at night but this while is important 
-    // fabs = absolute value
-    error = target - leftmiddle.position(rev) * Diameter * pi; //the error gets smaller when u reach ur target
-    errors.addVal(error);
-    speed = Kp * error + Ki * errors.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
-    drive(speed, speed, 10);
-    olderror = error;
- //inches = turns * Diameter * pi;
-    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", leftmiddle.position(rev)); //math fun
-    Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
-    Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
-    Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
-  }
-  brakeDrive();
-}
+void inchDrive(double target, double accuracy = 0.25) {
+	 double Kp = 50 / 3; // about 16.667, was previously 10
+	 double Ki = 5; // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
+	 double Kd = 40 / 3; // about 13.333, was previously 20.0
+	 double speed;
+	 double error = target;
+	 double olderror = error;
+	 
+	 /*dist += target;
+	 target = dist;*/
+	 
+	 leftDrive1.setPosition(0, rev);
+	 leftDrive2.setPosition(0, rev);
+	 leftmiddle.setPosition(0, rev);
+	 rightDrive1.setPosition(0, rev);
+	 rightDrive2.setPosition(0, rev);
+	 rightmiddle.setPosition(0, rev);
+	 
+	 Integral errors;
+	 errors.size = 25; // takes about 0.25 seconds to fill up
+	 errors.innit(error);
+	 
+	 while(fabs(error) > accuracy) {
+	 // did this late at night but this while is important 
+	 // fabs = absolute value
+	 error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
+	 errors.addVal(error);
+	 speed = Kp * error + Ki * errors.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
+	 drive(speed, speed, 10);
+	 olderror = error;
+	 Brain.Screen.printAt(1, 40, "turns = %0.2f ", minRots()); // math fun
+	 Brain.Screen.printAt(1, 60, "speed = %0.2f ", speed);
+	 //Brain.Screen.printAt(1, 100, "inches = %.2f f", inches);
+	 Brain.Screen.printAt(1, 120, "error = %.2f f", error);
+	 }
+	 brakeDrive();
+	}
 
 //if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
 //1 sec if your good
@@ -398,10 +424,10 @@ void auton() {
   driveTo(0, 0);
 /*
   // FIRST ALLIANCE (dont picasso)
-  brakeDrive(); // set motors to brak   e
-  mogo(-100, 750, false); // lower lift for 750 msec
+  brakeDrive(); // set motors to brake
+  mogoTime(-100, 750, false); // lower lift for 750 msec
   inchDrive(-17);
-  mogo(45.0, 500); // raise by 45 degrees
+  mogoDeg(45.0, 500); // raise by 45 degrees
   inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
   // OTHER ALLIANCE
   gyroturn(-90, facing);
@@ -411,32 +437,31 @@ void auton() {
   inchDrive(3.333 * UNITSIZE);
   claw.set(false);
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
-  lift(90.0, 20);
+  liftDeg(90.0, 20);
   inchDrive(-8);
   gyroturn(-90, facing);
   inchDrive(2.25 * UNITSIZE);
-  // PLATFORM ALLIANCE GOAL
   inchDrive(-6);
   gyroturn(-45,facing);
   inchDrive(1.41421 * UNITSIZE);
   gyroturn(45,facing);
   inchDrive(6);
   claw.set(true);
-  lift(-95.0, 20);
+  liftDeg(-95.0, 20);
   inchDrive(-6); //
   // GET SECOND YELLOW
   gyroturn(90, facing);
-  mogo(-45);
+  mogoDeg(-45);
   inchDrive(16);
   claw.set(false);
   // PLATFORM FIRST YELLOW
-  lift(90.0, 0);
-  mogo(90.0, 20);
+  liftDeg(90.0, 0);
+  mogoDeg(90.0, 20);
   inchDrive(-1.667 * UNITSIZE);
   gyroturn(-90, facing);
   inchDrive(6);
   claw.set(true);
-  lift(-95.0, 20);
+  liftDeg(-95.0, 20);
   inchDrive(-6);
   // GET LAST ALLIANCE
   while (lift1.position(degrees) > 270) { // make sure that the lift is low enought b4 continuing
@@ -445,20 +470,20 @@ void auton() {
   gyroturn(-90, facing);
   inchDrive(8);
   claw.set(false);
-  lift(90.0, 20);
+  liftDeg(90.0, 20);
   // PLATFORM LAST ALLIANCE
   inchDrive(-1.83333 * UNITSIZE);
   gyroturn(90,facing);
   inchDrive(6);
   claw.set(true);
   // GET OTHER SHORT YELLOW
-  lift(-95.0, 20);
+  liftDeg(-95.0, 20);
   inchDrive(-6);
   gyroturn(-135, facing);
   inchDrive(2 * UNITSIZE);
   claw.set(false);
   // PLATFORM OTHER SHORT YELLOW
-  lift(90.0, 20);
+  liftDeg(90.0, 20);
   inchDrive(-2 * UNITSIZE);
   gyroturn(45, facing);
   inchDrive(-6);
@@ -466,20 +491,35 @@ void auton() {
   inchDrive(6);
   claw.set(true);
   // GET TALL GOAL
-  lift(-95.0,20);
+  liftDeg(-95.0,20);
   inchDrive(-6);
   gyroturn(170.5376778, facing);
   inchDrive(1.520690633 * UNITSIZE);
   claw.set(false);
   // PICASSO ALLIANCE GOAL NEAR PLATFORM
   gyroturn(35.53767779,facing);
-  mogo(-95.0, 0);
+  mogoDeg(-95.0, 0);
   inchDrive(-2.474873734 * UNITSIZE);
   gyroturn(-90,facing);
   inchDrive(-UNITSIZE);
-  mogo(100);
+  mogoDeg(100);
   picasso.set(false);
-  // ALLIANCE GOAL */
+  // FAR ALLIANCE GOAL 
+  mogoDeg(-110, 0);
+  inchDrive(1 * UNITSIZE);
+  gyroturn(-45);
+  inchDrive(4 * UNITSIZE);
+  mogoDeg(60, 500);
+  // ALIGN TO PARK
+  liftDeg(90,0);
+  gyroturn(90);
+  inchDrive(4 * UNITSIZE);
+  gyroturn(-90);
+  inchDrive(0.75 * UNITSIZE);
+  liftDeg(-90,3000); // bring down the platform
+  // PARK
+  inchDrive(1 * UNITSIZE);
+  balance();*/
 }
 
 //driver controls,dont change unless your jaehoon or sean
@@ -549,13 +589,6 @@ void driver() {
     wait(20, msec); // dont waste air 
   }
 }
-
-    
-    
-
-
-  
-
   
 int main() {
   // Set up callbacks for autonomous and driver control periods.
