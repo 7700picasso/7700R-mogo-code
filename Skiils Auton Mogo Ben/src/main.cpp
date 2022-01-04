@@ -527,65 +527,52 @@ void driver() {
   //rstick is axis 2 and lstick is axis 3,why its 2,3 and not 1,2 idk ask vex
   coastDrive(); // set drive motors to coast
   while (true) {
-    int rstick=Controller1.Axis2.position();
-    int lstick=Controller1.Axis3.position();
-    drive(lstick, rstick,10);
+		int rstick=Controller1.Axis2.position();
+		int lstick=Controller1.Axis3.position();
+		drive(lstick, rstick,10);
+		int8_t tmp;
 
-    if (Controller1.ButtonR1.pressing())  //mogo up
-    {
-      amogus.spin(directionType::fwd,100,velocityUnits::pct);
-    }
-    else if (Controller1.ButtonR2.pressing()) //mogo down
-    {
-      amogus.spin(directionType::rev,100,velocityUnits::pct);
-    }
-    else
-    {
-      amogus.stop(brakeType::hold); //hold,do nothing if nothing is being pressed
-    }
+		// mogo control
+		tmp = 100 * (Controller1.ButtonR1.pressing() - Controller1.ButtonR2.pressing());
+		if (tmp == 0) {
+			amogus.stop(hold);
+		}
+		else {
+			amogus.spin(forward, tmp, percent);
+		}
+		// lift control
+		tmp = 100 * (Controller1.ButtonL1.pressing() - Controller1.ButtonL2.pressing());
+		if (tmp == 0) {
+			lift1.stop(hold);
+		}
+		else {
+			lift1.spin(forward, tmp, percent);
+		}
 
-    if (Controller1.ButtonL1.pressing())  //lift up
-    {
-      lift1.spin(directionType::fwd,100,velocityUnits::pct);
-    }
-    else if (Controller1.ButtonL2.pressing())  //lift down
-    {
-      lift1.spin(directionType::rev,100,velocityUnits::pct);
-    }
-    else
-    {
-      lift1.stop(brakeType::hold); //hold,do nothing if nothing is being pressed
-    }
+		if (Controller1.ButtonY.pressing()) { // hook down
+			backHook.set(false);
+		}
+		else if (Controller1.ButtonB.pressing()) { // hook up or maybe the opposite 
+			backHook.set(true);
+		}
 
-    if (Controller1.ButtonY.pressing()) //claw down
-    {
-      backHook.set(false);
-    }
-    else if (Controller1.ButtonB.pressing()) //claw up or maybe the opposite 
-    {
-      backHook.set(true);
-    }
-    
-    if (Controller1.ButtonX.pressing()) //claw close
-    {
-      claw.set(false);
-    }
-    else if (Controller1.ButtonA.pressing()) //claw open
-    {
-      claw.set(true);
-    }
+		if (Controller1.ButtonX.pressing()) { // claw close
+			claw.set(false);
+		}
+		else if (Controller1.ButtonA.pressing()) { //claw open
+			claw.set(true);
+		}
 
-    if (Controller1.ButtonUp.pressing()) //picasso open or whaever you say
-    {
-      picasso.set(false);
-    }
-    else if (Controller1.ButtonRight.pressing()) //picasso do opposite
-    {
-      picasso.set(true);
-    }
-
-    wait(20, msec); // dont waste air 
+		if (Controller1.ButtonUp.pressing()) { // picasso
+			picasso.set(false);
+		}
+		else if (Controller1.ButtonRight.pressing()) { // un-picasso
+			picasso.set(true);
+		}
+		wait(20, msec); // dont waste air 
   }
+}
+
 }
   
 int main() {
