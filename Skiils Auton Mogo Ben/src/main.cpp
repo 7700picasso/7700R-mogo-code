@@ -43,11 +43,11 @@ using namespace vex;
 competition Competition;
 
 // define your global Variables here
-long double pi = 3.1415926535897932384626433832795028841971693993751058209749445923; // much more accurate than 3.14
-double Diameter = 3.25;
+const long double pi = 3.1415926535897932384626433832795028841971693993751058209749445923; // much more accurate than 3.14
+const double Diameter = 3.25 * 25.4; // mm
 
 // global vars for auton
-const double UNITSIZE = 23.75; // its not 24
+const double UNITSIZE = 600; // mm
 
 /*
 dont touch
@@ -79,31 +79,6 @@ void drive(int lspeed, int rspeed, int wt){
 //use to go forward,backwards,left right etc,turning if your stupid
 //use inchdrive to go forward and backwards,use gyro to turn
 
-struct Integral {
-  std::vector<double> values;
-  uint16_t size = 1;
-
-  void innit() {
-    values = {};
-
-    for (int i = 0; i < size; i++)
-      values.push_back(0);
-  }
-
-  void addVal(double val) {
-    for (int i = size; i > 0; --i)
-      values[i] = values[i - 1] * 0.995; // decreases impact of previous values
-    values[0] = val;
-  }
-
-  double mean() {
-    double sum = 0;
-    for (int i = 0; i < size; i++)
-      sum += values[i];
-    return sum / size;
-  }
-};
-
 double minRots() {    
   double rots[] = {
     leftDrive1.position(rev), leftDrive2.position(rev), leftmiddle.position(rev),
@@ -119,11 +94,7 @@ double minRots() {
   return min;
 }
 
-void getPos(double &x, double &y) {
-  x = GPS.xPosition(mm) / 600, 
-  y = GPS.yPosition(mm) / 600;
-}
-
+// i am bad at naming stuff
 double pointTowardsPre(double x1, double y1, double x2, double y2, bool Reverse = false) { // get the angle at which the robot needs to turn to point towards point (x,y)
   double theta = atan2((x2 - x1), (y2 - y1)) * 180 / pi - Gyro.rotation(degrees); // get number of degrees robot must turn to point in a certain direction.
   //theta += (theta < 0 ? 1 : -1) * 180 * (y2 >= y1); // then maybe add ±180 to correct it
@@ -219,9 +190,9 @@ void mogoTime(int speed, int duration, bool stop = false) {//, int WT = -1) {
 // 100 is up and -100 is down,I know this 
 
 
-void claw(bool open) {
+void Claw(bool open) {
   wait(50 * open, msec);
-  Claw.set(open);
+  claw.set(open);
   wait(50 * !open, msec);
 }
 
@@ -252,43 +223,39 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(double target, double accuracy = 0.25) {
-	 double Kp = 50 / 3; // about 16.667, was previously 10
-	 double Ki = 5; // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
-	 double Kd = 40 / 3; // about 13.333, was previously 20.0
-	 double speed;
-	 double error = target;
-	 double olderror = error;
+void mmDrive(double target, double accuracy = 5) {
+	double Kp = 0.66; // was previously 10 / 25.4
+	double Ki = 0.2; // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
+	double Kd = 0.525; // was previously 20.0 / 25.4
+	double speed;
+	double error = target;
+	double olderror = error;
 	 
-	 /*dist += target;
-	 target = dist;*/
+  leftDrive1.setPosition(0, rev);
+	leftDrive2.setPosition(0, rev);
+  leftmiddle.setPosition(0, rev);
+  rightDrive1.setPosition(0, rev);
+  rightDrive2.setPosition(0, rev);
+  rightmiddle.setPosition(0, rev);
 	 
-	 leftDrive1.setPosition(0, rev);
-	 leftDrive2.setPosition(0, rev);
-	 leftmiddle.setPosition(0, rev);
-	 rightDrive1.setPosition(0, rev);
-	 rightDrive2.setPosition(0, rev);
-	 rightmiddle.setPosition(0, rev);
+  double sum = 0;
+  int i = 1;
 	 
-	 Integral errors;
-	 errors.size = 25; // takes about 0.25 seconds to fill up
-	 errors.innit(error);
-	 
-	 while(fabs(error) > accuracy) {
-	 // did this late at night but this while is important 
-	 // fabs = absolute value
-	 error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
-	 errors.addVal(error);
-	 speed = Kp * error + Ki * errors.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
-	 drive(speed, speed, 10);
-	 olderror = error;
-	 Brain.Screen.printAt(1, 40, "turns = %0.2f ", minRots()); // math fun
-	 Brain.Screen.printAt(1, 60, "speed = %0.2f ", speed);
-	 //Brain.Screen.printAt(1, 100, "inches = %.2f f", inches);
-	 Brain.Screen.printAt(1, 120, "error = %.2f f", error);
-	 }
-	 brakeDrive();
+	while(fabs(error) > accuracy) {
+    // did this late at night but this while is important 
+    // fabs = absolute value
+    error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
+    sum = sum * 0.995 + error;
+    speed = Kp * error + Ki * sum / i++ + Kd * (error - olderror); // big error go fast slow error go slow 
+    drive(speed, speed, 10);
+    olderror = error;
+    Brain.Screen.printAt(1, 40, "turns = %0.2f ", minRots()); // math fun
+    Brain.Screen.printAt(1, 60, "speed = %0.2f ", speed);
+    //Brain.Screen.printAt(1, 100, "inches = %.2f f", inches);
+    Brain.Screen.printAt(1, 120, "error = %.2f f", error);
 	}
+	brakeDrive();
+}
 
 //if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
 //1 sec if your good
@@ -296,23 +263,22 @@ void inchDrive(double target, double accuracy = 0.25) {
 void balance() {
   double pitch = Gyro.pitch(degrees);
   double oldpitch = pitch;                //work in progress code
-  inchDrive(10, 100);
+  //inchDrive(10, 100);
   Brain.Screen.clearScreen();
   double Kp = 4;
   double Ki = 1;
   double Kd = 90;
   double speed;
 
-  Integral pitches;
-  pitches.size = 10;
-  pitches.innit();
+  double sum = 0;
+  int i = 1;
 
 double stopAng = 5; // stop when fabs(pitch) is at most 5°
 while(fabs(pitch) > stopAng)
 {
   pitch = Gyro.pitch(degrees);
-  pitches.addVal(pitch);
-  speed = Kp * pitch + Ki * pitches.mean() + Kd * (pitch - oldpitch);
+  sum = sum * 0.995 + pitch;
+  speed = Kp * pitch + Ki * sum / i++ + Kd * (pitch - oldpitch);
   drive(speed, speed, 10);
   oldpitch = pitch;
   Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
@@ -324,12 +290,11 @@ Brain.Screen.printAt(1, 150, "i am done ");
 // modded gyro code, sadge
 void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.25; // was 2.0
-  double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
+  double Ki = 0.2; // adds a bit less than 50% when there is 90° left.
   double Kd = 1.0; // was 16.0
 
-  Integral directions;
-  directions.size = 15;
-  directions.innit();
+  double sum = 0;
+  int i = 1;
  
   double currentDir = Gyro.rotation(degrees);
   double speed = 100;
@@ -342,8 +307,8 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
   while(fabs(error) > 1.25){ //fabs = absolute value while loop again
     currentDir = Gyro.rotation(degrees);
     error = target - currentDir; //error gets smaller closer you get,robot slows down
-    directions.addVal(error);
-    speed = Kp * error + Ki * directions.mean() + Kd * (error - olderror); // big error go fast slow error go slow 
+    sum = sum * 0.995 + error;
+    speed = Kp * error + Ki * sum / i++ + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
     Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir); //math thing again,2 decimal places
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
@@ -355,54 +320,67 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
   Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir);
 }
 
-void driveTo(double x2, double y2, bool Rev = 0, double accuracy = 1/48) {
+void printPos() {
+  while (true) {
+    //Controller1.Screen.clearLine();
+    Controller1.Screen.setCursor(0, 0);
+    Controller1.Screen.print("(%0.3f, %0.3f), dir: %0.3f", GPS.xPosition(mm) / 600, GPS.yPosition(mm) / 600, Gyro.rotation(degrees));
+    this_thread::sleep_for(1000);
+  }
+}
+
+vex::thread POS(printPos);
+
+
+void driveTo(double x2, double y2, bool Rev = 0, double accuracy = 5) {
   // point towards target
-  double x1, y1;
-  getPos(x1, y1);
+  double x1 = GPS.xPosition(mm), y1 = GPS.yPosition(mm);
+  x2 *= 600, y2 *= 600;
   double rotError = pointTowardsPre(x1, y1, x2, y2, Rev);
-  double facing = Gyro.rotation(degrees); // i need this ig
+  double facing = GPS.rotation(degrees); // i need this ig
+  Brain.Screen.printAt(1,40,"(%0.3f, %0.3f), dir: %0.3f", x1/600, x2/600, facing);
   gyroturn(rotError, facing);
 
   // go to target
-
+/*
   double speed;
   double distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
   double oldDistError = distError;
-  double distKp = 50 / 3; // about 16.667, was previously 10
-  double distKi = 5; // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
-  double distKd = 40 / 3; // about 13.333, was previously 20.0
+  // ummm idk why this is so big. It just is. I hope its not too big
+  double distKp = 0.66;
+  double distKi = 0.2;
+  double distKd = 0.525; 
 
-  Integral distErrors;
-  distErrors.size = 25; // takes about 0.25 seconds to fill up
-  distErrors.innit();
+  double distSum = 0;
+  int i = 1;
 
   // angle correction
-  double diff; // like speed
+  double rotSpeed; // like speed
   // rotError already exists
   double oldRotError = rotError;
   double rotKp = 0.333;
   double rotKi = 0.667;
   double rotKd = 5;
 
-  Integral rotErrors;
-  rotErrors.size = 25; // takes about 0.25 seconds to fill up
-  rotErrors.innit();
+  double rotSum = 0;
+  int j = 1;
 
   while(fabs(distError) > accuracy){
     // did this late at night but this while is important 
     // fabs = absolute value
-    getPos(x1, y1);
+    x1 = GPS.xPosition(mm), y1 = GPS.yPosition(mm);
     rotError = pointTowardsPre(x1, y1, x2, y2, Rev);
     distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-    distErrors.addVal(distError);
-    rotErrors.addVal(rotError);
-    speed = distKp * distError + distKi * distErrors.mean() + distKd * (distError - oldDistError); // big error go fast slow error go slow 
-    diff = rotKp * rotError + rotKi * rotErrors.mean() + rotKd * (rotError - oldRotError); // big error go fast slow error go slow 
-    drive(speed + diff, speed - diff, 10);
+    distSum = distSum * 0.995 + distError;
+    rotSum = rotSum * 0.995 + rotError;
+    speed = distKp * distError + distKi * distSum / i + distKd * (distError - oldDistError);
+    rotSpeed = rotKp * rotError + rotKi * rotSum / j + rotKd * (rotError - oldRotError);
+    drive(speed + rotSpeed, speed - rotSpeed, 10);
     oldDistError = distError;
     oldRotError = rotError;
+    Brain.Screen.print("(%0.3f, %0.3f), dir: %0.3f", x1/600, x2/600, facing);
   }
-  brakeDrive();
+  brakeDrive();*/
 }
 
 
@@ -413,7 +391,7 @@ void auton() {
   backHook.set(false);
   picasso.set(false);
 
-  while (Gyro.isCalibrating()) { // dont start until gyro is calibrated
+  while (Gyro.isCalibrating() || GPS.isCalibrating()) { // dont start until gyro is calibrated
     wait(10, msec);
   }
 
@@ -526,6 +504,13 @@ void driver() {
   //2 joy sticks
   //rstick is axis 2 and lstick is axis 3,why its 2,3 and not 1,2 idk ask vex
   coastDrive(); // set drive motors to coast
+
+  while (Gyro.isCalibrating() || GPS.isCalibrating()) { // dont start until gyro is calibrated
+    wait(10, msec);
+  }
+
+  Gyro.setRotation(0, degrees);
+
   while (true) {
 		int rstick=Controller1.Axis2.position();
 		int lstick=Controller1.Axis3.position();
@@ -569,10 +554,12 @@ void driver() {
 		else if (Controller1.ButtonRight.pressing()) { // un-picasso
 			picasso.set(true);
 		}
+
+    if (Controller1.ButtonDown.pressing()) {
+      driveTo(0, 0);
+    }
 		wait(20, msec); // dont waste air 
   }
-}
-
 }
   
 int main() {
