@@ -4,7 +4,7 @@
 /*    Author:       Sean Jaehoon and Saif                                     */
 /*    Created:      sometime                                                  */
 /*    Description:  7700R code 2021-2022  Skills                              */
-/*               Benjamin 12-20-21                                            */
+/*               Benjamin 1-0-22                                              */
 /*----------------------------------------------------------------------------*/
 //7700R
 //Sean
@@ -42,12 +42,13 @@ using namespace vex;
 // A global instance of competition,dont touch either
 competition Competition;
 
+// global vars for auton
+#define UNITSIZE 600
+#define INCHES 25.4
+
 // define your global Variables here
 const long double pi = 3.1415926535897932384626433832795028841971693993751058209749445923; // much more accurate than 3.14
-const double Diameter = 3.25 * 25.4; // mm
-
-// global vars for auton
-const double UNITSIZE = 600; // mm
+const double Diameter = 3.25 * INCHES; // mm
 
 /*
 dont touch
@@ -77,7 +78,7 @@ void drive(int lspeed, int rspeed, int wt){
   wait(wt, msec);
 }
 //use to go forward,backwards,left right etc,turning if your stupid
-//use inchdrive to go forward and backwards,use gyro to turn
+//use mmDrive to go forward and backwards,use gyro to turn
 
 double minRots() {    
   double rots[] = {
@@ -95,8 +96,8 @@ double minRots() {
 }
 
 // i am bad at naming stuff
-double pointTowardsPre(double x1, double y1, double x2, double y2, bool Reverse = false) { // get the angle at which the robot needs to turn to point towards point (x,y)
-  double theta = atan2((x2 - x1), (y2 - y1)) * 180 / pi - Gyro.rotation(degrees); // get number of degrees robot must turn to point in a certain direction.
+double degToTarget(double x1, double y1, double x2, double y2, bool Reverse = false) { // get the angle at which the robot needs to turn to point towards point (x,y)
+  double theta = atan2((x2 - x1), (y2 - y1)) * 180 / pi - GPS.rotation(degrees); // get number of degrees robot must turn to point in a certain direction.
   //theta += (theta < 0 ? 1 : -1) * 180 * (y2 >= y1); // then maybe add ±180 to correct it
   return theta + (theta < 0 ? 1 : -1) * 180 * Reverse; // then maybe add ±180 to if its backwards
 }
@@ -189,7 +190,6 @@ void mogoTime(int speed, int duration, bool stop = false) {//, int WT = -1) {
 //mogo(100, 1500, false);  so mogo 100% for 1500 msc with some werid stop thing
 // 100 is up and -100 is down,I know this 
 
-
 void Claw(bool open) {
   wait(50 * open, msec);
   claw.set(open);
@@ -263,7 +263,7 @@ void mmDrive(double target, double accuracy = 5) {
 void balance() {
   double pitch = Gyro.pitch(degrees);
   double oldpitch = pitch;                //work in progress code
-  //inchDrive(10, 100);
+  //mmDrive(10, 100);
   Brain.Screen.clearScreen();
   double Kp = 4;
   double Ki = 1;
@@ -289,25 +289,25 @@ Brain.Screen.printAt(1, 150, "i am done ");
 
 // modded gyro code, sadge
 void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
-  double Kp = 1.25; // was 2.0
-  double Ki = 0.2; // adds a bit less than 50% when there is 90° left.
-  double Kd = 1.0; // was 16.0
+  double Kp = 2;
+  double Ki = 0.5;
+  double Kd = 16.0;
 
   double sum = 0;
   int i = 1;
  
   double currentDir = Gyro.rotation(degrees);
-  double speed = 100;
+  double speed;
   double error = target;
   double olderror = error;
   
   idealDir += target;
-  target = currentDir + idealDir - Gyro.rotation(degrees);
+  target = idealDir;
   
   while(fabs(error) > 1.25){ //fabs = absolute value while loop again
     currentDir = Gyro.rotation(degrees);
     error = target - currentDir; //error gets smaller closer you get,robot slows down
-    sum = sum * 0.995 + error;
+    sum = sum * 0.993 + error;
     speed = Kp * error + Ki * sum / i++ + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
     Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir); //math thing again,2 decimal places
@@ -324,25 +324,23 @@ void printPos() {
   while (true) {
     //Controller1.Screen.clearLine();
     Controller1.Screen.setCursor(0, 0);
-    Controller1.Screen.print("(%0.3f, %0.3f), dir: %0.3f", GPS.xPosition(mm) / 600, GPS.yPosition(mm) / 600, Gyro.rotation(degrees));
+    Controller1.Screen.print("(%0.3f, %0.3f), dir: %0.3f", GPS.xPosition(mm) / 600, GPS.yPosition(mm) / 600, GPS.rotation(degrees));
     this_thread::sleep_for(1000);
   }
 }
 
 vex::thread POS(printPos);
 
-
-void driveTo(double x2, double y2, bool Rev = 0, double accuracy = 5) {
+void driveTo(double x2, double y2, bool Reverse = 0, double accuracy = 5) {
   // point towards target
   double x1 = GPS.xPosition(mm), y1 = GPS.yPosition(mm);
   x2 *= 600, y2 *= 600;
-  double rotError = pointTowardsPre(x1, y1, x2, y2, Rev);
+  double rotError = degToTarget(x1, y1, x2, y2, Reverse);
   double facing = GPS.rotation(degrees); // i need this ig
-  Brain.Screen.printAt(1,40,"(%0.3f, %0.3f), dir: %0.3f", x1/600, x2/600, facing);
+  Brain.Screen.printAt(1,40,"(%0.3f, %0.3f), dir: %0.3f", x1 / 600, y1 / 600, facing);
   gyroturn(rotError, facing);
 
   // go to target
-/*
   double speed;
   double distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
   double oldDistError = distError;
@@ -369,7 +367,7 @@ void driveTo(double x2, double y2, bool Rev = 0, double accuracy = 5) {
     // did this late at night but this while is important 
     // fabs = absolute value
     x1 = GPS.xPosition(mm), y1 = GPS.yPosition(mm);
-    rotError = pointTowardsPre(x1, y1, x2, y2, Rev);
+    rotError = degToTarget(x1, y1, x2, y2, Reverse);
     distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     distSum = distSum * 0.995 + distError;
     rotSum = rotSum * 0.995 + rotError;
@@ -378,16 +376,14 @@ void driveTo(double x2, double y2, bool Rev = 0, double accuracy = 5) {
     drive(speed + rotSpeed, speed - rotSpeed, 10);
     oldDistError = distError;
     oldRotError = rotError;
-    Brain.Screen.print("(%0.3f, %0.3f), dir: %0.3f", x1/600, x2/600, facing);
+    Brain.Screen.print("(%0.3f, %0.3f), dir: %0.3f", x1 / 600, y1 / 600, facing);
   }
-  brakeDrive();*/
+  brakeDrive();
 }
 
 
 // This auton is the skills auton,not fully tested
 void auton() {
-  double facing = 0;
-
   backHook.set(false);
   picasso.set(false);
 
@@ -395,107 +391,110 @@ void auton() {
     wait(10, msec);
   }
 
-  Gyro.setRotation(0, degrees);
+  double facing = GPS.rotation(deg);
+  Gyro.setRotation(facing, degrees);
 
-  driveTo(0, 0);
-/*
+  /* 
+  first mogo in the center
+  second to its right
+  third to its left
+  fourth shove near center
+  */
+
   // FIRST ALLIANCE (dont picasso)
   brakeDrive(); // set motors to brake
   mogoTime(-100, 750, false); // lower lift for 750 msec
-  inchDrive(-17);
+  mmDrive(-17 * INCHES);
   mogoDeg(45.0, 500); // raise by 45 degrees
-  inchDrive(4);                       //please put notes for all functions in this auton for troubleshooting 
-  // OTHER ALLIANCE
-  gyroturn(-90, facing);
-  claw.set(true); // open claw
-  inchDrive(-UNITSIZE);
-  gyroturn(-90, facing);
-  inchDrive(3.333 * UNITSIZE);
-  claw.set(false);
+  driveTo(-1.5, -2.5);
+  // OTHER ALLIANCE GOAL
+  driveTo(-1.5, -1.5, true);
+  Claw(true); // open claw
+  driveTo(2, -1.5);
+  Claw(false);
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
   liftDeg(90.0, 20);
-  inchDrive(-8);
-  gyroturn(-90, facing);
-  inchDrive(2.25 * UNITSIZE);
-  inchDrive(-6);
-  gyroturn(-45,facing);
-  inchDrive(1.41421 * UNITSIZE);
-  gyroturn(45,facing);
-  inchDrive(6);
-  claw.set(true);
-  liftDeg(-95.0, 20);
-  inchDrive(-6); //
-  // GET SECOND YELLOW
-  gyroturn(90, facing);
-  mogoDeg(-45);
-  inchDrive(16);
+  driveTo(1.5, -1.5, true);
+  driveTo(1.5, 1);
+  // PLATFORM FIRST ALLIANCE GOAL
+  driveTo(1.5, 0.5, true); // back up
+  driveTo(0.5, 0.5); // avoid rings 
+  driveTo(0, 1.5); 
+  driveTo(0, 1.75); // go into platform
+  Claw(true); // drop mogo
+  liftDeg(-95.0, 20); // start lowering lift
+  mmDrive(-6 * INCHES);
+  // GET FIRST YELLOW
+  driveTo(1, 1.5);
+  Claw(false);
+  mogoDeg(-50); // lower the mogo in the back lift
   claw.set(false);
   // PLATFORM FIRST YELLOW
-  liftDeg(90.0, 0);
-  mogoDeg(90.0, 20);
-  inchDrive(-1.667 * UNITSIZE);
-  gyroturn(-90, facing);
-  inchDrive(6);
-  claw.set(true);
-  liftDeg(-95.0, 20);
-  inchDrive(-6);
+  liftDeg(90.0, 0); // start raising lift
+  driveTo(-1 / 6, 1.5, true); // drop first alliance in ideal place
+  driveTo(1 / 3, 1.5);
+  mogoDeg(45);
+  driveTo(1 / 3, 1.75); // line up with platform
+  Claw(true);
+  liftDeg(-95, 20);
+  mmDrive(-6 * INCHES);
   // GET LAST ALLIANCE
   while (lift1.position(degrees) > 270) { // make sure that the lift is low enought b4 continuing
     wait(10, msec);
   }
   gyroturn(-90, facing);
-  inchDrive(8);
+  mmDrive(8);
   claw.set(false);
   liftDeg(90.0, 20);
   // PLATFORM LAST ALLIANCE
-  inchDrive(-1.83333 * UNITSIZE);
+  mmDrive(-1.83333 * UNITSIZE);
   gyroturn(90,facing);
-  inchDrive(6);
+  mmDrive(6);
   claw.set(true);
   // GET OTHER SHORT YELLOW
   liftDeg(-95.0, 20);
-  inchDrive(-6);
+  mmDrive(-6);
   gyroturn(-135, facing);
-  inchDrive(2 * UNITSIZE);
+  mmDrive(2 * UNITSIZE);
   claw.set(false);
   // PLATFORM OTHER SHORT YELLOW
   liftDeg(90.0, 20);
-  inchDrive(-2 * UNITSIZE);
+  mmDrive(-2 * UNITSIZE);
   gyroturn(45, facing);
-  inchDrive(-6);
+  mmDrive(-6);
   gyroturn(90, facing);
-  inchDrive(6);
+  mmDrive(6);
   claw.set(true);
   // GET TALL GOAL
   liftDeg(-95.0,20);
-  inchDrive(-6);
+  mmDrive(-6);
   gyroturn(170.5376778, facing);
-  inchDrive(1.520690633 * UNITSIZE);
+  mmDrive(1.520690633 * UNITSIZE);
   claw.set(false);
   // PICASSO ALLIANCE GOAL NEAR PLATFORM
   gyroturn(35.53767779,facing);
   mogoDeg(-95.0, 0);
-  inchDrive(-2.474873734 * UNITSIZE);
+  mmDrive(-2.474873734 * UNITSIZE);
   gyroturn(-90,facing);
-  inchDrive(-UNITSIZE);
+  mmDrive(-UNITSIZE);
   mogoDeg(100);
   picasso.set(false);
   // FAR ALLIANCE GOAL 
   mogoDeg(-110, 0);
-  inchDrive(1 * UNITSIZE);
-  gyroturn(-45);
-  inchDrive(4 * UNITSIZE);
+  mmDrive(1 * UNITSIZE);
+  gyroturn(-45, facing);
+  mmDrive(4 * UNITSIZE);
   mogoDeg(60, 500);
   // ALIGN TO PARK
   liftDeg(90,0);
-  gyroturn(90);
-  inchDrive(4 * UNITSIZE);
-  gyroturn(-90);
-  inchDrive(0.75 * UNITSIZE);
-  liftDeg(-90,3000); // bring down the platform
+  gyroturn(90, facing);
+  mmDrive(4 * UNITSIZE);
+  gyroturn(-90, facing);
+  mmDrive(0.75 * UNITSIZE);
+  liftDeg(-90, 3000); // bring down the platform
   // PARK
-  inchDrive(1 * UNITSIZE);
-  balance();*/
+  mmDrive(1 * UNITSIZE);
+  balance();
 }
 
 //driver controls,dont change unless your jaehoon or sean

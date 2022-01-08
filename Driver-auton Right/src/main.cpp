@@ -40,8 +40,8 @@ using namespace vex;
 competition Competition;
 
 // define your global Variables here
-float pi=3.14;
-float Diameter = 3.25;
+const long double pi = 3.1415926535897932384626433832795028841971693993751058209749445923; // much more accurate than 3.14
+const double Diameter = 3.25;
 
 //dont touch
 //Diameter is the wheel
@@ -51,6 +51,7 @@ float Diameter = 3.25;
 
 void pre_auton(void) {
   vexcodeInit();
+  Gyro.calibrate();
   wait(2000, msec);
 
   // All activities that occur before the competition starts
@@ -73,32 +74,76 @@ void drive(int lspeed, int rspeed, int wt){
 
 
 
-void lift(int speed, int wt ){
-  lift1.spin(forward, speed, pct);
+void liftDeg(double angle, int WT = -1, int speed = 100) {
+  lift1.setVelocity(speed, percent);
+  lift1.setStopping(hold);
+
+  lift1.spinFor(forward, 9 * angle, degrees, WT == -1);
   
-  wait(wt, msec);
+  if (WT != -1) {
+    wait(WT,msec);
+  }
+  else {
+    lift1.stop(hold);
+  }
 }
+
+void liftTime(int speed, int duration, bool stop) {//, int WT = -1) {
+  lift1.spin(forward,speed,percent);
+  wait(duration,msec);
+  if (stop) {
+    lift1.stop(hold);
+  }
+}
+
 //makes lift go up or down
 // its the lift speed then wait time
 //example lift(-100,1200);  so lift 100% for 1200 msc
 // 100 is up and -100 is down,or other way around,you can figure that out
 
+void mogoDeg(double angle, int WT = -1, int speed = 100) {
+  amogus.setVelocity(speed, percent);
+  amogus.setStopping(hold);
 
-
-
-void mogo (int speed, int wt){
-  amogus.spin(forward, speed, pct);
+  amogus.spinFor(forward, 5 * angle, degrees, WT == -1);
   
-  
-  wait(wt, msec);
+  if (WT != -1) {
+    wait(WT,msec);
+  }
+  else {
+    amogus.stop(hold);
+  }
 }
+
+volatile int mogoSpeed = 0, mogoDuration = 0; 
+volatile bool mogoStop = false, done = true;
+
+void mogoTime() {//int speed, int duration, bool stop = false) {
+  while (true) {
+    if (!done) {
+      amogus.spin(forward, mogoSpeed, percent);
+      wait(mogoDuration, msec);
+
+      if (mogoDuration) {
+        amogus.stop(hold);
+      }
+      done = true;
+    }
+  }
+}
+
+void startMogoTime(int speed, int duration, bool stop = false) {
+  mogoSpeed = speed, 
+  mogoDuration = duration; 
+  mogoStop = stop;
+  done = false;
+}
+
+thread liftControl(mogoTime);
 //makes mogo go up or down
 // its the lift speed then wait time
 //example mogo(-100,1200);  so mogo 100% for 1200 msc
 // 100 is up and -100 is down,I know this 
-
-
-
 
 
 void clawopen (bool open)
@@ -129,16 +174,19 @@ void picassos (bool open)
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(float target, int speed){
+void inchDrive(double target, int speed){
   leftDrive1.setPosition(0,  rev);
-    leftDrive2.setPosition(0,  rev);//might only need 1 of 3 of these but im a dumbass so leave it 
+  leftDrive2.setPosition(0,  rev);//might only need 1 of 3 of these but im a dumbass so leave it 
   leftmiddle.setPosition(0,  rev);
-  float inches = 0.0;
-  float turns= 0.0;
-  float error = target; 
-  float olderror = error; 
-  float kp=10;
-  float kd = 20.0;
+  double inches = 0.0;
+  double turns= 0.0;
+  double error = target; 
+  double olderror = error; 
+  double kp = 10;
+  double ki = 5;
+  double kd = 20.0;
+  double sum = 0;
+  int i = 0;
   
   //dont use the drive function you dumbass
   //use inchdrive,this took me a while to code :(
@@ -148,18 +196,18 @@ void inchDrive(float target, int speed){
   //inchDrive(-55, 100); go 55in backwards at 100%
 
 
-  while(fabs(error)>1.0){
+  while(fabs(error) > 1.0){
     //did this late at night but this while is important 
    //fabs = absolute value
     //heading= Gyro.rotation(degrees);
-  drive(speed, speed, 10);
-      turns =leftmiddle.position(rev);
+    drive(speed, speed, 10);
+    turns =leftmiddle.position(rev);
     inches = turns * Diameter * pi;   //took and hour to fix this I think,was off by like 10 inches lol
-    olderror=error;
-    error = target-inches; //the error gets smaller when u reach ur target
+    olderror = error;
+    error = target - inches; //the error gets smaller when u reach ur target
+    sum = sum * 0.993 + error;
  //inches = turns * Diameter * pi;
-    
-    speed = kp*error+kd*(error-olderror); //big error go fast slow error go slow 
+    speed = kp*error + ki * sum / i++ + kd*(error-olderror); //big error go fast slow error go slow 
 
     Brain.Screen.printAt(1, 40, "turns = %0.2f    ", turns); //math fun
     Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
@@ -172,20 +220,24 @@ void inchDrive(float target, int speed){
 //if gyro needs calibrating add a 10ms wait or something
  
 
-void gyroturn(float target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
- float kp=2.0;
- float kd = 16.0;
+void gyroturn(double target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+ double kp=2.0;
+ double ki = 0.2;
+ double kd = 16.0;
   Gyro.setRotation(0, degrees); //centers,calibrates gyro to 0
-  float heading = 0.0;
-  float speed = 100;
-  float error = target;
-  float olderror=error;
+  double heading = 0.0;
+  double speed = 100;
+  double error = target;
+  double olderror=error;
+  double sum = 0;
+  int i = 0;
   while(fabs(error)>2.0){ //fabs = absolute value while loop again
     heading= Gyro.rotation(degrees);
     olderror=error;
     error = target-heading; //error gets smaller closer you get,robot slows down
+    sum = sum * 0.993 + error;
     drive(speed, -speed, 10);
-    speed = kp*error+kd*(error-olderror); //big error go fast slow error go slow 
+    speed = kp*error+ ki * sum / i++ + kd*(error-olderror); //big error go fast slow error go slow 
     Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", heading); //math thing again,2 decimal places
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     //all ths print screen helps test to make sure gyro not broke
@@ -201,20 +253,23 @@ void auton() {
   claw.set(true); //open claw
   wait(100, msec);//wait
   inchDrive(55, 100);//go forward 55 inches
- Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
+  Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
   claw.set(false);//close claw,just picked up that yellow mogo
   wait (20, msec);//wait dumbass
   inchDrive(-30, 100);//go backwards 30 inches
- gyroturn(-90); //turn 90 degress with the robots back facing the right side mogo
+  gyroturn(-90); //turn 90 degress with the robots back facing the right side mogo
   inchDrive(10,100);//drive forward 10 inches to align and have time for the mogo to go down
-  mogo(-100,1200);//mogo goes down
+  startMogoTime(-100,1200);//mogo goes down
+  wait(750,msec);
   inchDrive(-25,100);//drive backwards 25 inches to mogo
-  mogo(100,3000);//pikup mogo
+  startMogoTime(100,3000);//pikup mogo
+  wait(1000, msec);
   picasso.set(true);//picasso that mogo
   picasso.set(true);//picasso stupid so again to make sure,fr this fixed it lol
-  mogo(-100,1200);//mogo back down and ready for driver
-   gyroturn(90);//turn facing the field 
+  startMogoTime(-100,1200);//mogo back down and ready for driver
+  wait(500, msec);
+  gyroturn(90);//turn facing the field 
 
 
 
