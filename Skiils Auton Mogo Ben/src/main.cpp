@@ -261,14 +261,14 @@ void balance() { // WIP
   double Ki = 1;
   double Kd = 110; // we need it to go backwards when it starts tipping the other way.
   volatile double speed;
-	volatile double pitch = Gyro.pitch(degrees);
+  volatile double pitch = Gyro.pitch(degrees);
   volatile double oldpitch = pitch;
 
   volatile double sum = 0;
   volatile uint16_t t = 1;
 
-	double stopAng = 5; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
-	while(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 3) {
+  double stopAng = 5; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
+  while(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 3) {
   	pitch = Gyro.pitch(degrees);
   	sum = sum * 0.99 + pitch;
   	speed = Kp * pitch + Ki * sum / t++ + Kd * (pitch - oldpitch);
@@ -312,7 +312,7 @@ void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25)
 	brakeDrive();
 }
 
-void driveTo(double x2, double y2, bool Reverse = false, bool clawing = false, double accuracy = 0.25) {
+void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double accuracy = 0.25) {
   // point towards target
   pointAt(x2, y2, Reverse);
 	
@@ -321,7 +321,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool clawing = false, d
   x2 *= UNITSIZE, y2 *= UNITSIZE;
 
   // go to target
-  volatile double distSpeed;
+  volatile double distSpeed = 100;
   volatile double distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
   volatile double oldDistError = distError;
 	double Kp = 50 / 3;
@@ -345,12 +345,15 @@ void driveTo(double x2, double y2, bool Reverse = false, bool clawing = false, d
     // did this late at night but this while is important 
     // fabs = absolute value
     x1 = GPS.xPosition(mm), y1 = GPS.yPosition(mm);
-    rotError = degToTarget(x1, y1, x2, y2, Reverse);
-    distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    distError = (fabs(degToTarget(x1, y1, x2, y2,Reverse)) < 120 ? 1 : -1) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    rotError = degToTarget(x1, y1, x2, y2, (!Reverse && distSpeed > 0) || (Reverse && distSpeed < 0) ? false : true); // so that it doesn't output something like 180 if it barely goes past the target.
     distSum = distSum * 0.99 + distError;
     rotSum = rotSum * 0.99 + rotError;
     distSpeed = distKp * distError + distKi * distSum / t + distKd * (distError - oldDistError);
     rotSpeed = rotKp * rotError + rotKi * rotSum / t++ + rotKd * (rotError - oldRotError);
+    if (endClaw && claw.value() && ((distSpeed < 0 && !Reverse) || (distSpeed > 0 && Reverse))) {
+      claw.set(false);
+    }
     drive(distSpeed + rotSpeed, distSpeed - rotSpeed, 10);
     oldDistError = distError;
     oldRotError = rotError;
