@@ -464,8 +464,8 @@ void auton() {
   liftDeg(-95, 3000); // bring down the platform. wait till it's done
 	lift.setStopping(coast); // allow lift to get shoved a bit up.
   // PARK
-  unitDrive(892 / UNITSIZE / 25.4); // goes to about the middle of the platform... I think
-  balance(); // just in case. I hope this works.
+  unitDrive(30 / UNITSIZE); // goes to about the middle of the platform... I think
+  balance(); // just in case its not balanced. I hope this works.
 }
 
 //driver controls,dont change unless your jaehoon or sean
