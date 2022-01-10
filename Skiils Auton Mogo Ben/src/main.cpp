@@ -4,7 +4,7 @@
 /*    Author:       Sean Jaehoon and Saif                                     */
 /*    Created:      sometime                                                  */
 /*    Description:  7700R code 2021-2022  Skills                              */
-/*               Benjamin 1-0-22                                              */
+/*               Benjamin 1-10-22                                              */
 /*----------------------------------------------------------------------------*/
 //7700R
 //Benjamin
@@ -43,12 +43,10 @@ using namespace vex;
 competition Competition;
 
 // tile size
-#define UNITSIZE 600
-// converts mm to inches
-#define INCHES 25.4
+#define UNITSIZE 23.75
 
 // define your global Variables here
-const long double pi = 3.1415926535897932384626433832795028841971693993751058209749445923; // much more accurate than 3.14
+const long double pi = 3.14159265358979323846264338327950288419716939937510582097494459230; // much more accurate than 3.14
 const double Diameter = 3.25 * INCHES; // mm
 
 void pre_auton(void) {
@@ -65,7 +63,7 @@ void pre_auton(void) {
   // gets pistons down before match
   // dont touch this 
 	
-	// BOOOOOOPP
+	// BOOOOOOP whoops
 }
 
 void drive(int lspeed, int rspeed, int wt){
@@ -95,11 +93,10 @@ double minRots() {
   return min;
 }
 
-// i am bad at naming stuff
-double degToTarget(double x1, double y1, double x2, double y2, bool Reverse = false) { // get the angle at which the robot needs to turn to point towards point (x,y)
-  double theta = atan2((x2 - x1), (y2 - y1)) * 180 / pi - GPS.rotation(degrees); // get number of degrees robot must turn to point in a certain direction.
-  //theta += (theta < 0 ? 1 : -1) * 180 * (y2 >= y1); // then maybe add ±180 to correct it
-  return theta + (theta < 0 ? 1 : -1) * 180 * Reverse; // then maybe add ±180 to if its backwards
+// get the angle at which the robot needs to turn to point towards point (x,y)
+double degToTarget(double x1, double y1, double x2, double y2, bool Reverse = false) { 
+	int_8t dir = !Reverse ? 1 : -1;
+  return (atan2(dir * (x2 - x1), dir * (y2 - y1)) * 180 / pi - GPS.rotation(degrees) - 180) % 360 - 180; // return a corrected value between -180 and 180;
 }
 
 void brakeDrive() {
@@ -223,10 +220,13 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void mmDrive(double target, double accuracy = 5) {
-	double Kp = 0.66; // was previously 10 / 25.4
-	double Ki = 0.2; // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
-	double Kd = 0.525; // was previously 20.0 / 25.4
+void unitDrive(double target, double accuracy = 0.25) {
+	double Kp = 50 / 3; // was previously 10
+	double Ki = 5; // to increase speed if its taking too long.
+	double Kd = 40 / 3; // was previously 20.0
+	
+	target *= UNITSIZE;
+	
 	volatile double speed;
 	volatile double error = target;
 	volatile double olderror = error;
@@ -239,12 +239,12 @@ void mmDrive(double target, double accuracy = 5) {
   rightmiddle.setPosition(0, rev);
 	 
   volatile double sum = 0;
-  volatile short t = 1;
+  volatile uint16_t = 1;
 	 
 	while(fabs(error) > accuracy) {
     // did this late at night but this while is important 
     error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
-    sum = sum * 0.993 + error;
+    sum = sum * 0.99 + error;
     speed = Kp * error + Ki * sum / t++ + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
     olderror = error;
@@ -265,13 +265,13 @@ void balance() { // WIP
   volatile double oldpitch = pitch;
 
   volatile double sum = 0;
-  volatile int i = 1;
+  volatile uint16_t t = 1;
 
 	double stopAng = 5; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
 	while(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 3) {
   	pitch = Gyro.pitch(degrees);
-  	sum = sum * 0.993 + pitch;
-  	speed = Kp * pitch + Ki * sum / i++ + Kd * (pitch - oldpitch);
+  	sum = sum * 0.99 + pitch;
+  	speed = Kp * pitch + Ki * sum / t++ + Kd * (pitch - oldpitch);
   	drive(speed, speed, 10);
   	oldpitch = pitch;
   	Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
@@ -282,28 +282,19 @@ void balance() { // WIP
 
 // R.I.P. gyroturn 2021 - 2022 it will live on in pointAt(x, y)
 
-void printPos() {
-  while (true) {
-    Controller1.Screen.setCursor(0, 0);
-    Controller1.Screen.print("(%0.3f, %0.3f), dir: %0.3f", GPS.xPosition(mm) / 600, GPS.yPosition(mm) / 600, GPS.rotation(degrees));
-    this_thread::sleep_for(1000);
-  }
-}
-
-vex::thread POS(printPos);
-
 void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25) { 
 	// point towards target
-  double x1 = GPS.xPosition(mm), y1 = GPS.yPosition(mm);
-  x2 *= 600, y2 *= 600;
+  double x1 = GPS.xPosition(inches), y1 = GPS.yPosition(inches);
+  x2 *= UNITSIZE, y2 *= UNITSIZE;
 	double target = degToTarget(x1, y1, x2, y2, Reverse); // I dont trust the gyro for finding the target, and i dont trst the gps with spinning
 	
+	// using old values bc they faster
 	double Kp = 2;
 	double Ki = 0.5;
 	double Kd = 16.0;
 
 	volatile double sum = 0;
-	volatile int t = 1;
+	volatile uint16_t t = 1;
 
 	volatile double speed;
 	volatile double error = target;
@@ -313,7 +304,7 @@ void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25)
 
 	while(fabs(error) > accuracy) { // fabs = absolute value while loop again
 		error = target - Gyro.rotation(degrees); //error gets smaller closer you get,robot slows down
-		sum = sum * 0.993 + error;
+		sum = sum * 0.99 + error;
 		speed = Kp * error + Ki * sum / t++ + Kd * (error - olderror); // big error go fast slow error go slow 
 		drive(speed, -speed, 10);
 		olderror = error;
@@ -321,34 +312,34 @@ void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25)
 	brakeDrive();
 }
 
-void driveTo(double x2, double y2, bool Reverse = false, double accuracy = 5) {
+void driveTo(double x2, double y2, bool Reverse = false, bool clawing = false, double accuracy = 0.25) {
   // point towards target
   pointAt(x2, y2, Reverse);
 	
 	// get positional data
-	volatile double x1 = GPS.xPosition(mm), y1 = GPS.yPosition(mm);
-  x2 *= 600, y2 *= 600;
+	volatile double x1 = GPS.xPosition(inches), y1 = GPS.yPosition(inches);
+  x2 *= UNITSIZE, y2 *= UNITSIZE;
 
   // go to target
-  volatile double speed;
+  volatile double distSpeed;
   volatile double distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
   volatile double oldDistError = distError;
-	double distKp = 0.66;
-  double distKi = 0.2;
-  double distKd = 0.525; 
-
-  volatile double distSum = 0;
-  volatile int t = 1; // time
+	double Kp = 50 / 3;
+	double Ki = 5;
+	double Kd = 40 / 3;
 
   // angle correction
   volatile double rotSpeed; // like speed
   volatile double rotError = degToTarget(x1, y1, x2, y2, Reverse);
   volatile double oldRotError = rotError;
-  double rotKp = 0.333;
-  double rotKi = 0.667;
-  double rotKd = 5;
-
+  double rotKp = 1 / 3;
+  double rotKi = 2 / 3;
+  double rotKd = 2;
+	
+	// sums for integral
+	volatile double distSum = 0;
   volatile double rotSum = 0;
+	volatile uint16_t t = 1; // time
 
   while(fabs(distError) > accuracy){
     // did this late at night but this while is important 
@@ -356,11 +347,11 @@ void driveTo(double x2, double y2, bool Reverse = false, double accuracy = 5) {
     x1 = GPS.xPosition(mm), y1 = GPS.yPosition(mm);
     rotError = degToTarget(x1, y1, x2, y2, Reverse);
     distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-    distSum = distSum * 0.995 + distError;
-    rotSum = rotSum * 0.995 + rotError;
-    speed = distKp * distError + distKi * distSum / t + distKd * (distError - oldDistError);
-    rotSpeed = rotKp * rotError + rotKi * rotSum / t + rotKd * (rotError - oldRotError);
-    drive(speed + rotSpeed, speed - rotSpeed, 10);
+    distSum = distSum * 0.99 + distError;
+    rotSum = rotSum * 0.99 + rotError;
+    distSpeed = distKp * distError + distKi * distSum / t + distKd * (distError - oldDistError);
+    rotSpeed = rotKp * rotError + rotKi * rotSum / t++ + rotKd * (rotError - oldRotError);
+    drive(distSpeed + rotSpeed, distSpeed - rotSpeed, 10);
     oldDistError = distError;
     oldRotError = rotError;
   }
@@ -404,7 +395,7 @@ void auton() {
   brakeDrive(); // set motors to brake
   mogoTime(-100, 600, false); // lower amogus for 750 msec
 	liftTime(-25, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
-  mmDrive(-17 * INCHES); // scoop up mogo
+  unitDrive(-17 / UNITSIZE); // scoop up mogo
   mogoDeg(45.0, 375);  // takes 750 for lift to move by 90°, so it should to half that to move 45°.
   driveTo(-1.5, -2.5);
   // OTHER ALLIANCE GOAL
@@ -423,7 +414,7 @@ void auton() {
   Claw(true); // drop mogo
   liftDeg(-95.0, 20); // start lowering lift
 	mogoDeg(-50, 0); // start lowering the mogo in the back lift
-  mmDrive(-150); // back up
+  unitDrive(-UNITSIZE / 4); // back up
   // GET FIRST YELLOW
   driveTo(1.25, 1.5);
   Claw(false);
@@ -438,7 +429,7 @@ void auton() {
 	driveTo(1 / 3, 1.25); // go into platform
 	Claw(true);
 	liftDeg(-95, 20); // start lowering lift
-	mmDrive(-150); // back up
+	unitDrive(-UNITSIZE / 4); // back up
   // GET FIRST ALLIANCE (WHICH WAS DROPPED PRIOR)
 	pointAt(-1 / 3, 1.5); // turn so that lift doesn't hit platform while we wait.
 	wait(250, msec); // pause bc you probably need to
@@ -449,7 +440,7 @@ void auton() {
 	driveTo(-1 / 3, 1.75);
 	Claw(true); // drop it. good boi.
 	liftDeg(-95, 20); // start lowering lift
-	mmDrive(-150); // back up
+	unitDrive(-UNITSIZE / 4); // back up
 	// GET LAST ALLIANCE WITH AMOGUS
 	driveTo(-2, 1.5, true); // go backwards to mogo
 	mogoDeg(50, 375); // raise by 50 degrees (mogo is already lowered)
@@ -462,7 +453,7 @@ void auton() {
 	driveTo(-1 / 6, 1.75); // go into platform
 	Claw(true);
 	liftDeg(-95, 20); // start lowering lift
-	mmDrive(-150); // back up
+	unitDrive(-UNITSIZE / 4); // back up
   // GET TALL GOAL
 	driveTo(-2 / 45, 0.4); // dont to too close but also not too far
 	Claw(false); // grab it.
@@ -473,7 +464,7 @@ void auton() {
   liftDeg(-95, 3000); // bring down the platform. wait till it's done
 	lift.setStopping(coast); // allow lift to get shoved a bit up.
   // PARK
-  mmDrive(892); // goes to about the middle of the platform... I think
+  unitDrive(892 / UNITSIZE / 25.4); // goes to about the middle of the platform... I think
   balance(); // just in case. I hope this works.
 }
 
