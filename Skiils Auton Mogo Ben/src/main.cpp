@@ -42,12 +42,11 @@ using namespace vex;
 // A global instance of competition, dont touch either
 competition Competition;
 
-// tile size
-#define UNITSIZE 23.75
-
 // define your global Variables here
 const long double pi = 3.14159265358979323846264338327950288419716939937510582097494459230; // much more accurate than 3.14
-const double Diameter = 3.25; // mm
+#define Diameter 3.25
+// tile size
+#define UNITSIZE 23.75
 
 void pre_auton(void) {
   vexcodeInit();
@@ -59,7 +58,7 @@ void pre_auton(void) {
   // gets pistons down before match
   // dont touch this 
 	
-	// BOOOOOOP whoops
+	// BOOOOOOP whoops i touched it
 }
 
 void drive(int lspeed, int rspeed, int wt){
@@ -91,9 +90,25 @@ double minRots() {
 
 // get the angle at which the robot needs to turn to point towards point (x,y)
 double degToTarget(double x1, double y1, double x2, double y2, bool Reverse = false, double facing = Gyro.rotation(degrees)) { 
-	int dir = !Reverse ? 1 : -1;
-  double theta = atan2(dir * (x2 - x1), dir * (y2 - y1)) * 180 / pi - facing - 180;
-  return /*(theta / 360 - */int(theta) % 360 - 180;//)) - 180; // return a value between -180 and 180
+	// First formula then second formula until the % operator so we dont have to use this formula multiple times.
+	// If Reverse then we'd be adding 180 then subtracting it again at the start of formula 2. This avoids that.
+  double theta = atan2(x2 - x1, y2 - y1) * 180 / pi - facing - 180 * !Reverse;
+	// the rest of the angle correction formula with our modulo formula.
+  return (theta < 0) * 360 + theta - 360 * (floor(theta / 360) + (theta < 0)) - 180;
+	/*
+	EXPLAINATION:
+	Formula for some value of error when current direction is 'facing' (assume atan2 is in radians so we must convert it to degrees):
+	error(facing) = atan2(x2 - x1, y2 - y1) * 180 / pi + 180 * Reverse - facing. (formula 1)
+	This formula can return a value greater than 180, and we don't want the robot turning more than it needs to.
+	So we covert it to an angle between -180 and 180 with the formula (which I derived myself):
+	angle(theta) = (theta - 180) % 360 - 180. (formula 2)
+	Unfortunately, C++ doesn't allow % operator for non-int types, so we have our own formula for a % b:
+	a % b = (a < 0) * b + a - b * int(a / b).
+	Idk if int(x) will work the way it needs to, so we'll make our own:
+	INT(x) = floor(x) + (x < 0).
+	Noting that a < 0 iff a / b < 0 for all a and b ≠ 0, our modulo formula becomes:
+	a % b = (a < 0) * b + a - b * (floor(a / b) + (a < 0)). (modulo formula)
+	*/
 }
 
 void brakeDrive() {
@@ -221,8 +236,9 @@ void unitDrive(double target, double accuracy = 0.25) {
 	double Kp = 50 / 3; // was previously 10
 	double Ki = 5; // to increase speed if its taking too long.
 	double Kd = 40 / 3; // was previously 20.0
+	double decay = 0.8; integral decay
 	
-	target *= UNITSIZE;
+	target *= UNITSIZE; // convert UNITS to inches
 	
 	volatile double speed;
 	volatile double error = target;
@@ -236,13 +252,12 @@ void unitDrive(double target, double accuracy = 0.25) {
   rightmiddle.setPosition(0, rev);
 	 
   volatile double sum = 0;
-  volatile uint16_t t = 1;
 	 
 	while(fabs(error) > accuracy) {
     // did this late at night but this while is important 
     error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
-    sum = sum * 0.99 + error;
-    speed = Kp * error + Ki * sum / t++ + Kd * (error - olderror); // big error go fast slow error go slow 
+    sum = sum * decay + error;
+    speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
     olderror = error;
 	}
@@ -257,18 +272,18 @@ void balance() { // WIP
   double Kp = 4;
   double Ki = 1;
   double Kd = 110; // we need it to go backwards when it starts tipping the other way.
+	double decay = 0.8; // integral decay
   volatile double speed;
   volatile double pitch = Gyro.pitch(degrees);
   volatile double oldpitch = pitch;
 
   volatile double sum = 0;
-  volatile uint16_t t = 1;
 
   double stopAng = 5; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
   while(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 3) {
   	pitch = Gyro.pitch(degrees);
-  	sum = sum * 0.99 + pitch;
-  	speed = Kp * pitch + Ki * sum / t++ + Kd * (pitch - oldpitch);
+  	sum = sum * decay + pitch;
+  	speed = Kp * pitch + Ki * sum + Kd * (pitch - oldpitch);
   	drive(speed, speed, 10);
   	oldpitch = pitch;
   	Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
@@ -277,24 +292,24 @@ void balance() { // WIP
 	Brain.Screen.printAt(1, 150, "i am done ");
 }
 
-void gyroturn(double target) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+void gyroturn(double target, double accuracy = 1.25) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 2;
-  double Ki = 0.2;
+  double Ki = 1;
   double Kd = 16;
+	double decay = 0.8; // integral decay
+	
+  volatile double sum = 0;
 
-  double sum = 0;
-  int t = 1;
-
-  double speed = 100;
-  double error = target;
-  double olderror = error;
+  volatile double speed;
+  volatile double error = target;
+  volatile double olderror = error;
 
   target += Gyro.rotation(degrees);
 
-  while(fabs(error) > 1.25){ //fabs = absolute value while loop again
+  while(fabs(error) > accuracy) { //fabs = absolute value while loop again
     error = target - Gyro.rotation(degrees);; //error gets smaller closer you get,robot slows down
-    sum = sum * 0.99 + error;
-    speed = Kp * error + Ki * sum / t++ + Kd * (error - olderror); // big error go fast slow error go slow 
+    sum = sum * decay + error; // some testing tells me that 0.8 is a good decay rate
+    speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     olderror = error;
@@ -309,11 +324,11 @@ void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25)
 	
 	// using old values bc they faster
 	double Kp = 2;
-	double Ki = 0.5;
+	double Ki = 1;
 	double Kd = 16.0;
+	double decay = 0.8; // integral sum decay.
 
 	volatile double sum = 0;
-	volatile uint16_t t = 1;
 
 	volatile double speed;
 	volatile double error = target;
@@ -323,8 +338,8 @@ void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25)
 
 	while(fabs(error) > accuracy) { // fabs = absolute value while loop again
 		error = target - Gyro.rotation(degrees); //error gets smaller closer you get,robot slows down
-		sum = sum * 0.99 + error;
-		speed = Kp * error + Ki * sum / t++ + Kd * (error - olderror); // big error go fast slow error go slow 
+		sum = sum * decay + error;
+		speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
 		drive(speed, -speed, 10);
 		olderror = error;
 	}
@@ -349,40 +364,38 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   pointAt(x2, y2, Reverse);
 
 	// get positional data
-	volatile double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
+	/*volatile*/ double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
   x2 *= UNITSIZE, y2 *= UNITSIZE;
 
   // go to target
-  volatile double distSpeed = 100;
+  //volatile double distSpeed = 100;
   volatile double distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-  volatile double oldDistError = distError;
+  /*volatile double oldDistError = distError;
 	double distKp = 50 / 3;
 	double distKi = 5;
 	double distKd = 40 / 3;
+	volatile double distSum = 0;*/
 
   // angle correction
-  volatile double rotSpeed; // like speed
+  /*volatile double rotSpeed; // like speed
   volatile double rotError = degToTarget(x1, y1, x2, y2, Reverse);
   volatile double oldRotError = rotError;
   double rotKp = 1 / 3 * 0;
   double rotKi = 2 / 3 * 0;
-  double rotKd = 2 * 0;
+  double rotKd = 2 * 0;*/
+  //volatile double rotSum = 0;
 	
-	// sums for integral
-	volatile double distSum = 0;
-  volatile double rotSum = 0;
-	volatile uint16_t t = 1; // time
-
-  while(fabs(distError) > accuracy){
+	unitDrive((!Reverse ? 1 : -1) * distError / UNITSIZE);
+ /* while(fabs(distError) > accuracy){
     // did this late at night but this while is important 
     // fabs = absolute value
     x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
     distError = (fabs(degToTarget(x1, y1, x2, y2, Reverse)) < 160 ? 1 : -1) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     rotError = degToTarget(x1, y1, x2, y2, (!Reverse && distSpeed > 0) || (Reverse && distSpeed < 0) ? false : true); // so that it doesn't output something like 180 if it barely goes past the target.
-    distSum = distSum * 0.99 + distError;
-    rotSum = rotSum * 0.99 + rotError;
-    distSpeed = distKp * distError + distKi * distSum / t + distKd * (distError - oldDistError);
-    rotSpeed = rotKp * rotError + rotKi * rotSum / t++ + rotKd * (rotError - oldRotError);
+    distSum = distSum * 0.8 + distError;
+    rotSum = rotSum * 0.8 + rotError;
+    distSpeed = distKp * distError + distKi * distSum + distKd * (distError - oldDistError);
+    rotSpeed = rotKp * rotError + rotKi * rotSum + rotKd * (rotError - oldRotError);
     if (endClaw && claw.value() && ((distSpeed < 0 && !Reverse) || (distSpeed > 0 && Reverse))) {
       claw.set(false);
     }
@@ -390,7 +403,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
     oldDistError = distError;
     oldRotError = rotError;
   }
-  brakeDrive();
+  brakeDrive();*/
 }
 
 
