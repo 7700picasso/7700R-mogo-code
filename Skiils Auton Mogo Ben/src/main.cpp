@@ -232,7 +232,7 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void unitDrive(double target, double accuracy = 0.25) {
+void unitDrive(double target, bool endClaw = false, double accuracy = 0.25) {
 	double Kp = 50 / 3; // was previously 10
 	double Ki = 5; // to increase speed if its taking too long.
 	double Kd = 40 / 3; // was previously 20.0
@@ -253,14 +253,17 @@ void unitDrive(double target, double accuracy = 0.25) {
 	 
   volatile double sum = 0;
 	 
-	while(fabs(error) > accuracy) {
+  while(fabs(error) > accuracy) {
     // did this late at night but this while is important 
     error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
     sum = sum * decay + error;
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
     olderror = error;
-	}
+    if (endClaw && error < 0 && claw.value()) { // close claw b4 it goes backwards.
+	Claw(false);
+    }
+  }
 	brakeDrive();
 }
 
@@ -385,7 +388,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   double rotKd = 2 * 0;*/
   //volatile double rotSum = 0;
 	
-	unitDrive((!Reverse ? 1 : -1) * distError / UNITSIZE);
+unitDrive((!Reverse ? 1 : -1) * distError / UNITSIZE, endClaw);
  /* while(fabs(distError) > accuracy){
     // did this late at night but this while is important 
     // fabs = absolute value
