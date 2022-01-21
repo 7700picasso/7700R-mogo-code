@@ -46,7 +46,7 @@ const double Diameter = 3.25;
 //dont touch
 //Diameter is the wheel
 //pie is pie dumbass
-
+bool isDriver = false;
 
 
 void pre_auton(void) {
@@ -130,10 +130,12 @@ void mogoTime() {//int speed, int duration, bool stop = false) {
 }
 
 void startMogoTime(int speed, int duration, bool stop = false) {
-  mogoSpeed = speed, 
-  mogoDuration = duration; 
-  mogoStop = stop;
-  done = false;
+  if (!isDriver) {
+    mogoSpeed = speed, 
+    mogoDuration = duration; 
+    mogoStop = stop;
+    done = false;
+  }
 }
 
 thread liftControl(mogoTime);
@@ -268,6 +270,7 @@ void driver() {
   // User control code here, inside the loop
   //2 joy sticks
   //rstick is axis 2 and lstick is axis 3,why its 2,3 and not 1,2 idk ask vex
+  isDriver = true;
   while (true) {
     int rstick=Controller1.Axis2.position();
     int lstick=Controller1.Axis3.position();
