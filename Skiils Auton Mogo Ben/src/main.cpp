@@ -456,8 +456,7 @@ void auton() {
   mogoDeg(45.0, 375);  // takes 750 for lift to move by 90°, so it should to half that to move 45°.
   unitDrive(6 / UNITSIZE);
   // OTHER ALLIANCE GOAL
-  gyroturn(-90);
-  unitDrive(1);
+  driveTo(2, -1.5, false, true);
   driveTo(2, -1.5, false, true); // go there and close the claw
   //Claw(false);
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
