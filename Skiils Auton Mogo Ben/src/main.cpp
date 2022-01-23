@@ -88,13 +88,15 @@ double minRots() {
   return min;
 }
 
+double mod(double a, double b) {
+  return (a < 0) * b + a - b * (floor(a / b) + (a < 0));
+}
+
 // get the angle at which the robot needs to turn to point towards point (x,y)
 double degToTarget(double x1, double y1, double x2, double y2, bool Reverse = false, double facing = Gyro.rotation(degrees)) { 
 	// First formula then second formula until the % operator so we dont have to use this formula multiple times.
 	// If Reverse then we'd be adding 180 then subtracting it again at the start of formula 2. This avoids that.
-  double theta = atan2(x2 - x1, y2 - y1) * 180 / pi - facing - 180 * !Reverse;
-	// the rest of the angle correction formula with our modulo formula.
-  return (theta < 0) * 360 + theta - 360 * (floor(theta / 360) + (theta < 0)) - 180;
+  return mod(atan2(x2 - x1, y2 - y1) * 180 / pi - mod(facing, 360) - 180 * !Reverse, 360) - 180;
 	/*
 	EXPLAINATION:
 	Formula for some value of error when current direction is 'facing' (assume atan2 is in radians so we must convert it to degrees):
@@ -236,7 +238,7 @@ void unitDrive(double target, bool endClaw = false, double accuracy = 0.25) {
 	double Kp = 50 / 3; // was previously 10
 	double Ki = 5; // to increase speed if its taking too long.
 	double Kd = 40 / 3; // was previously 20.0
-	double decay = 0.8; integral decay
+	double decay = 0.8; // integral decay
 	
 	target *= UNITSIZE; // convert UNITS to inches
 	
@@ -296,9 +298,9 @@ void balance() { // WIP
 }
 
 void gyroturn(double target, double accuracy = 1.25) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
-  double Kp = 2;
-  double Ki = 1;
-  double Kd = 16;
+  double Kp = 1.1;
+  double Ki = 0.5;
+  double Kd = 1.25;
 	double decay = 0.8; // integral decay
 	
   volatile double sum = 0;
@@ -319,17 +321,16 @@ void gyroturn(double target, double accuracy = 1.25) { // idk maybe turns the ro
   }
 }
 
-void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25) { 
-	// point towards target
-  double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
+void pointAt(double x2, double y2, bool Reverse = false, double x1 = -GPS.yPosition(inches), double y1 = GPS.xPosition(inches), double accuracy = 1) { 
+	// point towards targetnss 
   x2 *= UNITSIZE, y2 *= UNITSIZE;
-	double target = degToTarget(x1, y1, x2, y2, Reverse); // I dont trust the gyro for finding the target, and i dont trst the gps with spinning
+	double target = degToTarget(x1, y1, x2, y2, Reverse, Gyro.rotation(degrees)); // I dont trust the gyro for finding the target, and i dont trst the gps with spinning
 	
 	// using old values bc they faster
-	double Kp = 2;
-	double Ki = 1;
-	double Kd = 16.0;
-	double decay = 0.8; // integral sum decay.
+	double Kp = 1.1;
+	double Ki = 0.5;
+	double Kd = 1.25;
+	double decay = 0.5; // integral sum decay.
 
 	volatile double sum = 0;
 
@@ -339,7 +340,7 @@ void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25)
 	
 	target += Gyro.rotation(degrees); // I trust gyro better for turning.
 
-	while(fabs(error) > accuracy) { // fabs = absolute value while loop again
+	while(fabs(error) > accuracy || fabs(speed) > 1) { // fabs = absolute value while loop again
 		error = target - Gyro.rotation(degrees); //error gets smaller closer you get,robot slows down
 		sum = sum * decay + error;
 		speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
@@ -349,30 +350,30 @@ void pointAt(double x2, double y2, bool Reverse = false, double accuracy = 1.25)
 	brakeDrive();
 }
 bool runningAuto = 0;
-void printPos() {
+/*void printPos() {
   while (true) {
     //Controller1.Screen.clearLine();
     if (!runningAuto) {
       Controller1.Screen.setCursor(0, 0);
-      Controller1.Screen.print("(%0.2f, %0.2f), %0.2f", GPS.yPosition(inches) / -UNITSIZE, GPS.xPosition(inches) / UNITSIZE, GPS.rotation(degrees) - 90);
+      Controller1.Screen.print("(%0.2f, %0.2f), %0.2f", GPS.yPosition(inches) / -UNITSIZE, GPS.xPosition(inches) / UNITSIZE, GPS.rotation(degrees) - 90, Gyro.rotation(degrees));
     }
-    this_thread::sleep_for(1000);
+    this_thread::sleep_for(500);
   }
 }
-vex::thread POS(printPos);
-
+vex::thread POS(printPos);*/
 
 void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double accuracy = 0.25) {
   // point towards target
-  pointAt(x2, y2, Reverse);
+  
 
 	// get positional data
-	/*volatile*/ double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
+  double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
+  pointAt(x2, y2, Reverse, x1, y1, 1);
   x2 *= UNITSIZE, y2 *= UNITSIZE;
 
   // go to target
   //volatile double distSpeed = 100;
-  volatile double distError = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  volatile double distError = (Reverse ? -1 : 1) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
   /*volatile double oldDistError = distError;
 	double distKp = 50 / 3;
 	double distKi = 5;
@@ -384,11 +385,12 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   volatile double rotError = degToTarget(x1, y1, x2, y2, Reverse);
   volatile double oldRotError = rotError;
   double rotKp = 1 / 3 * 0;
+
   double rotKi = 2 / 3 * 0;
   double rotKd = 2 * 0;*/
   //volatile double rotSum = 0;
 	
-unitDrive((!Reverse ? 1 : -1) * distError / UNITSIZE, endClaw);
+unitDrive(distError / UNITSIZE, endClaw);
  /* while(fabs(distError) > accuracy){
     // did this late at night but this while is important 
     // fabs = absolute value
