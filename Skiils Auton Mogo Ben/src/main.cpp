@@ -235,10 +235,10 @@ void picassos (bool open) {
 //picasso.set(false);    close
 
 void unitDrive(double target, bool endClaw = false, double accuracy = 0.25) {
-	double Kp = 50 / 3; // was previously 10
-	double Ki = 5; // to increase speed if its taking too long.
-	double Kd = 40 / 3; // was previously 20.0
-	double decay = 0.8; // integral decay
+	double Kp = 10; // was previously 50/3
+	double Ki = 2.5; // to increase speed if its taking too long.
+	double Kd = 20; // was previously 40/3
+	double decay = 0.5; // integral decay
 	
 	target *= UNITSIZE; // convert UNITS to inches
 	
@@ -255,7 +255,7 @@ void unitDrive(double target, bool endClaw = false, double accuracy = 0.25) {
 	 
   volatile double sum = 0;
 	 
-  while(fabs(error) > accuracy) {
+  while(fabs(error) > accuracy || fabs(speed) > 10) {
     // did this late at night but this while is important 
     error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
     sum = sum * decay + error;
@@ -277,7 +277,7 @@ void balance() { // WIP
   double Kp = 4;
   double Ki = 1;
   double Kd = 110; // we need it to go backwards when it starts tipping the other way.
-	double decay = 0.8; // integral decay
+	double decay = 2/3; // integral decay
   volatile double speed;
   volatile double pitch = Gyro.pitch(degrees);
   volatile double oldpitch = pitch;
@@ -297,11 +297,11 @@ void balance() { // WIP
 	Brain.Screen.printAt(1, 150, "i am done ");
 }
 
-void gyroturn(double target, double accuracy = 1.25) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+void gyroturn(double target, double accuracy = 1) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.1;
-  double Ki = 0.5;
+  double Ki = 0.1;
   double Kd = 1.25;
-	double decay = 0.8; // integral decay
+	double decay = 0.5; // integral decay
 	
   volatile double sum = 0;
 
@@ -311,9 +311,9 @@ void gyroturn(double target, double accuracy = 1.25) { // idk maybe turns the ro
 
   target += Gyro.rotation(degrees);
 
-  while(fabs(error) > accuracy) { //fabs = absolute value while loop again
+  while(fabs(error) > accuracy || fabs(speed) > 1) { //fabs = absolute value while loop again
     error = target - Gyro.rotation(degrees);; //error gets smaller closer you get,robot slows down
-    sum = sum * decay + error; // some testing tells me that 0.8 is a good decay rate
+    sum = sum * decay + error; // some testing tells me that 0.5 is a good decay rate
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
@@ -328,7 +328,7 @@ void pointAt(double x2, double y2, bool Reverse = false, double x1 = -GPS.yPosit
 	
 	// using old values bc they faster
 	double Kp = 1.1;
-	double Ki = 0.5;
+	double Ki = 0.2;
 	double Kd = 1.25;
 	double decay = 0.5; // integral sum decay.
 
@@ -340,7 +340,7 @@ void pointAt(double x2, double y2, bool Reverse = false, double x1 = -GPS.yPosit
 	
 	target += Gyro.rotation(degrees); // I trust gyro better for turning.
 
-	while(fabs(error) > accuracy || fabs(speed) > 1) { // fabs = absolute value while loop again
+	while(fabs(error) > accuracy || fabs(error - olderror) > 0.05) { // fabs = absolute value while loop again
 		error = target - Gyro.rotation(degrees); //error gets smaller closer you get,robot slows down
 		sum = sum * decay + error;
 		speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
@@ -364,51 +364,68 @@ vex::thread POS(printPos);*/
 
 void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double accuracy = 0.25) {
   // point towards target
-  
-
+  wait(200,msec);
 	// get positional data
-  double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
+  volatile double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
   pointAt(x2, y2, Reverse, x1, y1, 1);
   x2 *= UNITSIZE, y2 *= UNITSIZE;
+  x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
 
   // go to target
   //volatile double distSpeed = 100;
-  volatile double distError = (Reverse ? -1 : 1) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-  /*volatile double oldDistError = distError;
-	double distKp = 50 / 3;
-	double distKi = 5;
-	double distKd = 40 / 3;
-	volatile double distSum = 0;*/
+  double target = (1 - Reverse * 2) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  unitDrive(target / UNITSIZE, endClaw);
 
-  // angle correction
-  /*volatile double rotSpeed; // like speed
-  volatile double rotError = degToTarget(x1, y1, x2, y2, Reverse);
-  volatile double oldRotError = rotError;
-  double rotKp = 1 / 3 * 0;
-
-  double rotKi = 2 / 3 * 0;
-  double rotKd = 2 * 0;*/
-  //volatile double rotSum = 0;
+  /*double Kp = 10; // was previously 10
+	double Ki = 1; // to increase speed if its taking too long.
+	double Kd = 20; // was previously 20.0
+	double decay = 0.5; // integral decay
+  volatile double sum = 0;
 	
-unitDrive(distError / UNITSIZE, endClaw);
- /* while(fabs(distError) > accuracy){
+	volatile double speed;
+  volatile double error = target;
+	volatile double olderror = error;
+
+  volatile double dirError = 0;
+  volatile double oldDirError = dirError;
+  volatile double dirSpeed = 0;
+  volatile double dirSum = 0;
+
+  double dirKp = 1.1; // was previously 10
+	double dirKi = 0.5; // to increase speed if its taking too long.
+	double dirKd = 1.25; // was previously 20.0
+	double dirDecay = 0.5; // integral decay
+	 
+  leftDrive1.setPosition(0, rev);
+	leftDrive2.setPosition(0, rev);
+  leftmiddle.setPosition(0, rev);
+  rightDrive1.setPosition(0, rev);
+  rightDrive2.setPosition(0, rev);
+  rightmiddle.setPosition(0, rev);
+	 
+  while(fabs(error) > accuracy || fabs(speed) > 10) {
     // did this late at night but this while is important 
-    // fabs = absolute value
-    x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
-    distError = (fabs(degToTarget(x1, y1, x2, y2, Reverse)) < 160 ? 1 : -1) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-    rotError = degToTarget(x1, y1, x2, y2, (!Reverse && distSpeed > 0) || (Reverse && distSpeed < 0) ? false : true); // so that it doesn't output something like 180 if it barely goes past the target.
-    distSum = distSum * 0.8 + distError;
-    rotSum = rotSum * 0.8 + rotError;
-    distSpeed = distKp * distError + distKi * distSum + distKd * (distError - oldDistError);
-    rotSpeed = rotKp * rotError + rotKi * rotSum + rotKd * (rotError - oldRotError);
-    if (endClaw && claw.value() && ((distSpeed < 0 && !Reverse) || (distSpeed > 0 && Reverse))) {
-      claw.set(false);
+    bool overShot = fabs(degToTarget(x1, y1, x2, y2, Reverse)) > 100;
+    target = -((Reverse + overShot) % 2) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)); // the error gets smaller when u reach ur target
+    dirError = degToTarget(x1, y1, x2, y2, (Reverse + overShot) % 2);
+    sum = sum * decay + error;
+    dirSum = dirSum * dirDecay + dirError;
+
+    speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
+    dirSpeed = dirKp * dirError + dirKi * dirSum + dirKd * (dirError - oldDirError);
+    drive(speed +0* dirSpeed, speed -0* dirSpeed, 10);
+    olderror = error;
+    oldDirError = dirError;
+
+    x1 += (olderror - error) * cos(Gyro.rotation(degrees)),
+    y1 += (olderror - error) * sin(Gyro.rotation(degrees));
+
+    if (endClaw && error < 0 && claw.value()) { // close claw b4 it goes backwards.
+	    Claw(false);
     }
-    drive(-distSpeed + rotSpeed, -distSpeed - rotSpeed, 10);
-    oldDistError = distError;
-    oldRotError = rotError;
   }
-  brakeDrive();*/
+	brakeDrive();
+  */
 }
 
 
@@ -456,9 +473,10 @@ void auton() {
   mogoDeg(45.0, 375);  // takes 750 for lift to move by 90°, so it should to half that to move 45°.
   unitDrive(6 / UNITSIZE);
   // OTHER ALLIANCE GOAL
-  driveTo(2, -1.5, false, true);
-  driveTo(2, -1.5, false, true); // go there and close the claw
-  //Claw(false);
+  gyroturn(-90); // align y axis
+  unitDrive(-1);
+  driveTo(2, -1.3, false, true); // go there and close the claw
+  Claw(false);
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
   liftDeg(90.0, 20);
   driveTo(1.5, -1.5, true);
@@ -471,8 +489,8 @@ void auton() {
   Claw(true); // drop mogo
   liftDeg(-95.0, 20); // start lowering lift
 	mogoDeg(-50, 0); // start lowering the mogo in the back lift
-  unitDrive(-UNITSIZE / 4); // back up
-  // GET FIRST YELLOW
+  unitDrive(-1 / 4); // back up
+  /*// GET FIRST YELLOW
   driveTo(1.25, 1.5, false, true); // go there and close the claw
   //Claw(false);
 	// PICASSO RIGHT FAR ALLIANCE GOAL
@@ -489,7 +507,7 @@ void auton() {
 	driveTo(1 / 3, 1.25); // go into platform
 	Claw(true);
 	liftDeg(-95, 20); // start lowering lift
-	unitDrive(-UNITSIZE / 4); // back up
+	unitDrive(-1 / 4); // back up
   // GET FIRST ALLIANCE (WHICH WAS DROPPED PRIOR)
 	pointAt(-1 / 3, 1.5); // turn so that lift doesn't hit platform while we wait.
 	wait(250, msec); // pause bc you probably need to
@@ -500,7 +518,7 @@ void auton() {
 	driveTo(-1 / 3, 1.75);
 	Claw(true); // drop it. good boi.
 	liftDeg(-95, 20); // start lowering lift
-	unitDrive(-UNITSIZE / 4); // back up
+	unitDrive(-1 / 4); // back up
 	// GET LAST ALLIANCE WITH AMOGUS
 	driveTo(-2, 1.5, true); // go backwards to mogo
 	mogoDeg(50, 0); // raise by 50 degrees (mogo is already lowered)
@@ -516,7 +534,7 @@ void auton() {
 	driveTo(-1 / 6, 1.75); // go into platform
 	Claw(true);
 	liftDeg(-95, 20); // start lowering lift
-	unitDrive(-UNITSIZE / 4); // back up
+	unitDrive(-1 / 4); // back up
   // GET TALL GOAL
 	driveTo(-2 / 45, 0.4, false, true); // dont to too close but also not too far. also closes claw after
 	//Claw(false); // grab it.
@@ -531,7 +549,7 @@ void auton() {
 	lift1.setStopping(coast); // allow lift to get shoved a bit up.
   // PARK
   unitDrive(30 / UNITSIZE); // goes to about the middle of the platform... I think
-  balance(); // just in case its not balanced. I hope this works.
+  balance(); // just in case its not balanced. I hope this works.*/
 }
 
 //driver controls,dont change unless your jaehoon or sean
@@ -593,7 +611,7 @@ void driver() {
 		}
 
     if (Controller1.ButtonDown.pressing()) {
-      driveTo(1, 1);
+      driveTo(0, -1.5);
     }
 		wait(20, msec); // dont waste air 
   }
