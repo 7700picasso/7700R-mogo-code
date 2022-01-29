@@ -486,7 +486,7 @@ void auton() {
   unitDrive(-4); //TMP PUSH TO OTHER SIDE
   unitDrive(3); //TMP COME BACK
   driveTo(-1.5, -1.5); // TMP
-  driveTo(1.95, -1.3, false, true); // go there and close the claw
+  driveTo(1.95, -1.4, false, true); // go there and close the claw
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
   liftDeg(90.0, 20);
   driveTo(1.5, -1.5, true);
