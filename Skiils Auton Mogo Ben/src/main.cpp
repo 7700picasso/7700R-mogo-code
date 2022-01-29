@@ -234,7 +234,7 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void unitDrive(double target, bool endClaw = false, double accuracy = 0.25) {
+void unitDrive(double target, bool endClaw = false, double maxTime = 2000000000, double accuracy = 0.25) {
 	double Kp = 10; // was previously 50/3
 	double Ki = 2.5; // to increase speed if its taking too long.
 	double Kd = 20; // was previously 40/3
@@ -254,13 +254,15 @@ void unitDrive(double target, bool endClaw = false, double accuracy = 0.25) {
   rightmiddle.setPosition(0, rev);
 	 
   volatile double sum = 0;
+  volatile double currTime = 0;
 	 
-  while(fabs(error) > accuracy || fabs(speed) > 10) {
+  while((fabs(error) > accuracy || fabs(speed) > 10) && currTime < maxTime) {
     // did this late at night but this while is important 
     error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
     sum = sum * decay + error;
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
+    currTime += 0.01;
     olderror = error;
     if (endClaw && error < 0 && claw.value()) { // close claw b4 it goes backwards.
 	    Claw(false);
@@ -299,6 +301,7 @@ void balance() { // WIP
 	brakeDrive();
 	Brain.Screen.printAt(1, 150, "i am done ");
 }
+
 
 void gyroturn(double target, double accuracy = 1) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.1;
@@ -365,7 +368,7 @@ bool runningAuto = 0;
 }
 vex::thread POS(printPos);*/
 
-void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double accuracy = 0.25) {
+void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double maxTime = 2000000000, double accuracy = 0.25) {
   // point towards target
   wait(200,msec);
 	// get positional data
@@ -377,7 +380,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   // go to target
   //volatile double distSpeed = 100;
   double target = (1 - Reverse * 2) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-  unitDrive(target / UNITSIZE, endClaw);
+  unitDrive(target / UNITSIZE, endClaw, maxTime, accuracy);
 
   /*double Kp = 10; // was previously 10
 	double Ki = 1; // to increase speed if its taking too long.
@@ -480,35 +483,34 @@ void auton() {
   gyroturn(-90); // align y axis
   picasso.set(true);
   // piccasso it, TEMPORARY.
-  unitDrive(-4);
-  unitDrive(3);
+  unitDrive(-4); //TMP PUSH TO OTHER SIDE
+  unitDrive(3); //TMP COME BACK
   driveTo(-1.5, -1.5); // TMP
-  driveTo(2.05, -1.1, false, true); // go there and close the claw
-
+  driveTo(2.05, -1.3, false, true); // go there and close the claw
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
   liftDeg(90.0, 20);
   driveTo(1.5, -1.5, true);
-  driveTo(1.5, 1);
+  driveTo(1.5, 1,true);
   // PLATFORM FIRST ALLIANCE GOAL ON MIDDLE (1st on platform)
-  driveTo(1.5, 0.5, true); // back up
+  driveTo(1.5, 0.5); // back up
   // driveTo(0.5, 0.5); // ADD BACK IF RINGS GET IN THE WAY
   driveTo(-0.175, 1.5); 
-  driveTo(-0.175, 1.666); // go into platform
-  unitDrive(1/5);
+  driveTo(-0.175, 1.75,false,false,1.5); // go into platform
+  pointAt(-0.175, 3);
   liftDeg(-95.0, 87);
   Claw(true); // drop mogo
 	//mogoDeg(-50, 0); // start lowering the mogo in the back lift
   //unitDrive(-1 / 4); // back up
-  driveTo(0,-1);
-  driveTo(0,0); // TEMPORARY
-  driveTo(1.5, 1.5,false,true); // TEMPORARY SECOND GOAL
-  liftDeg(90, 20); // TEMPORARY RAISE IT
+  driveTo(0,-1,true);
+  //driveTo(0,0); // TEMPORARY
+  driveTo(0, 1.5); // TEMPORARY SECOND GOAL
+  /*liftDeg(90, 20); // TEMPORARY RAISE IT
   driveTo(0,1.5); // TEMPORARY PLATFORM IT PART 1
   driveTo(0,1.7); // TEMPORARY PLATFORM IT PART 2
-  pointAt(0,2);
-  Claw(true);// TEMPORARY PLATFORM IT PART 3
-  liftDeg(-95, 20); // TEMPORARY LOWER IT
-  unitDrive(-1/4);// TEMPORARY
+  pointAt(0,3);*/
+  //Claw(true);// TEMPORARY PLATFORM IT PART 3
+  //liftDeg(-95, 20); // TEMPORARY LOWER IT
+  //unitDrive(-1/4);// TEMPORARY
   mogoDeg(-110, 0); // TEMPORARY
   driveTo(-2.25, 1.5,true);// TEMPORARY
   mogoDeg(45); // TEMPORARY
