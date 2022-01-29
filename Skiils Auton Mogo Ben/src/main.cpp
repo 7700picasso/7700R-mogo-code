@@ -263,10 +263,13 @@ void unitDrive(double target, bool endClaw = false, double accuracy = 0.25) {
     drive(speed, speed, 10);
     olderror = error;
     if (endClaw && error < 0 && claw.value()) { // close claw b4 it goes backwards.
-	Claw(false);
+	    Claw(false);
     }
   }
 	brakeDrive();
+  if (endClaw && claw.value()) {
+    Claw(false);
+  }
 }
 
 //if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
@@ -366,7 +369,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   // point towards target
   wait(200,msec);
 	// get positional data
-  volatile double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
+  double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
   pointAt(x2, y2, Reverse, x1, y1, 1);
   x2 *= UNITSIZE, y2 *= UNITSIZE;
   x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
@@ -381,7 +384,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
 	double Kd = 20; // was previously 20.0
 	double decay = 0.5; // integral decay
   volatile double sum = 0;
-	
+	      
 	volatile double speed;
   volatile double error = target;
 	volatile double olderror = error;
@@ -470,13 +473,18 @@ void auton() {
   amogus.setPosition(0,degrees);
   lift1.setPosition(0,degrees);
   unitDrive(-17 / UNITSIZE); // scoop up mogo
-  mogoDeg(45.0, 375);  // takes 750 for lift to move by 90°, so it should to half that to move 45°.
+  //mogoDeg(45.0, 375);  // takes 750 for lift to move by 90°, so it should to half that to move 45°.
+  mogoDeg(120,375); // TEMPORARY
   unitDrive(6 / UNITSIZE);
   // OTHER ALLIANCE GOAL
   gyroturn(-90); // align y axis
-  unitDrive(-1);
-  driveTo(2, -1.3, false, true); // go there and close the claw
-  Claw(false);
+  picasso.set(true);
+  // piccasso it, TEMPORARY.
+  unitDrive(-4);
+  unitDrive(3);
+  driveTo(-1.5, -1.5); // TMP
+  driveTo(2.05, -1.1, false, true); // go there and close the claw
+
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
   liftDeg(90.0, 20);
   driveTo(1.5, -1.5, true);
@@ -484,12 +492,29 @@ void auton() {
   // PLATFORM FIRST ALLIANCE GOAL ON MIDDLE (1st on platform)
   driveTo(1.5, 0.5, true); // back up
   // driveTo(0.5, 0.5); // ADD BACK IF RINGS GET IN THE WAY
-  driveTo(0, 1.5); 
-  driveTo(0, 1.75); // go into platform
+  driveTo(-0.175, 1.5); 
+  driveTo(-0.175, 1.666); // go into platform
+  unitDrive(1/5);
+  liftDeg(-95.0, 87);
   Claw(true); // drop mogo
-  liftDeg(-95.0, 20); // start lowering lift
-	mogoDeg(-50, 0); // start lowering the mogo in the back lift
-  unitDrive(-1 / 4); // back up
+	//mogoDeg(-50, 0); // start lowering the mogo in the back lift
+  //unitDrive(-1 / 4); // back up
+  driveTo(0,-1);
+  driveTo(0,0); // TEMPORARY
+  driveTo(1.5, 1.5,false,true); // TEMPORARY SECOND GOAL
+  liftDeg(90, 20); // TEMPORARY RAISE IT
+  driveTo(0,1.5); // TEMPORARY PLATFORM IT PART 1
+  driveTo(0,1.7); // TEMPORARY PLATFORM IT PART 2
+  pointAt(0,2);
+  Claw(true);// TEMPORARY PLATFORM IT PART 3
+  liftDeg(-95, 20); // TEMPORARY LOWER IT
+  unitDrive(-1/4);// TEMPORARY
+  mogoDeg(-110, 0); // TEMPORARY
+  driveTo(-2.25, 1.5,true);// TEMPORARY
+  mogoDeg(45); // TEMPORARY
+  driveTo(-2, -1,true);// TEMPORARY
+  mogoTime(-100, 500);// TEMPORARY
+  unitDrive(3);//driveTo(-2,2);// TEMPORARY
   /*// GET FIRST YELLOW
   driveTo(1.25, 1.5, false, true); // go there and close the claw
   //Claw(false);
