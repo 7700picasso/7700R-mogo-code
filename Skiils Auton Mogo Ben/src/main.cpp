@@ -202,9 +202,9 @@ void mogoTime(int speed, int duration, bool stop = false) {
 // 100 is up and -100 is down,I know this 
 
 void Claw(bool open) {
-  wait(50 * open, msec);
+  //wait(50 * open, msec);
   claw.set(open);
-  wait(50 * !open, msec);
+  //wait(50 * !open, msec);
 }
 
 //idk maybe opens and closes the claw
@@ -264,7 +264,7 @@ void unitDrive(double target, bool endClaw = false, double maxTime = 2000000000,
     drive(speed, speed, 10);
     currTime += 0.01;
     olderror = error;
-    if (endClaw && error < 0 && claw.value()) { // close claw b4 it goes backwards.
+    if (endClaw && error <= 0 && claw.value()) { // close claw b4 it goes backwards.
 	    Claw(false);
     }
   }
@@ -486,7 +486,7 @@ void auton() {
   unitDrive(-4); //TMP PUSH TO OTHER SIDE
   unitDrive(3); //TMP COME BACK
   driveTo(-1.5, -1.5); // TMP
-  driveTo(2.05, -1.3, false, true); // go there and close the claw
+  driveTo(1.95, -1.3, false, true); // go there and close the claw
   // SHOVE FIRST YELLOW TO THE OTHER SIDE
   liftDeg(90.0, 20);
   driveTo(1.5, -1.5, true);
@@ -494,9 +494,9 @@ void auton() {
   // PLATFORM FIRST ALLIANCE GOAL ON MIDDLE (1st on platform)
   driveTo(1.5, 0.5); // back up
   // driveTo(0.5, 0.5); // ADD BACK IF RINGS GET IN THE WAY
-  driveTo(-0.175, 1.5); 
-  driveTo(-0.175, 1.75,false,false,1.5); // go into platform
-  pointAt(-0.175, 3);
+  driveTo(-0.15, 1.5); 
+  driveTo(-0.15, 1.667, false,false,1); // go into platform
+  //pointAt(-0.175, 3);
   liftDeg(-95.0, 87);
   Claw(true); // drop mogo
 	//mogoDeg(-50, 0); // start lowering the mogo in the back lift
@@ -512,6 +512,7 @@ void auton() {
   //liftDeg(-95, 20); // TEMPORARY LOWER IT
   //unitDrive(-1/4);// TEMPORARY
   mogoDeg(-110, 0); // TEMPORARY
+  driveTo(-1.5, 1.5,true);// TEMPORARY
   driveTo(-2.25, 1.5,true);// TEMPORARY
   mogoDeg(45); // TEMPORARY
   driveTo(-2, -1,true);// TEMPORARY
