@@ -161,6 +161,20 @@ void liftDeg(double angle, int WT = -1, int speed = 100) {
   }
 }
 
+void liftTo(double angle, int8_t WT = -1, int8_t speed = 100) {
+  lift1.setVelocity(speed, percent);
+  lift1.setStopping(hold);
+
+  lift1.spinTo(forward, 9 * angle, degrees, WT == -1);
+  
+  if (WT != -1) {
+    wait(WT,msec);
+  }
+  else {
+    lift1.stop(hold);
+  }
+}
+
 void liftTime(int speed, int duration, bool stop = false) {
   lift1.spin(forward,speed,percent);
   wait(duration,msec);
@@ -175,6 +189,20 @@ void liftTime(int speed, int duration, bool stop = false) {
 // 100 is up and -100 is down,or other way around,you can figure that out
 
 void mogoDeg(double angle, int WT = -1, int speed = 100) {
+  amogus.setVelocity(speed, percent);
+  amogus.setStopping(hold);
+
+  amogus.spinFor(forward, 5 * angle, degrees, WT == -1);
+  
+  if (WT != -1) {
+    wait(WT,msec);
+  }
+  else {
+    amogus.stop(hold);
+  }
+}
+
+void mogoTo(double angle, int WT = -1, int speed = 100) {
   amogus.setVelocity(speed, percent);
   amogus.setStopping(hold);
 
@@ -368,7 +396,7 @@ bool runningAuto = 0;
 }
 vex::thread POS(printPos);*/
 
-void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double maxTime = 2000000000, double accuracy = 0.25) {
+void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double offset = 0, double maxTime = 2000000000, double accuracy = 0.25) {
   // point towards target
   wait(200,msec);
 	// get positional data
@@ -379,7 +407,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
 
   // go to target
   //volatile double distSpeed = 100;
-  double target = (1 - Reverse * 2) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  double target = (1 - Reverse * 2) * (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) - offset);
   unitDrive(target / UNITSIZE, endClaw, maxTime, accuracy);
 
   /*double Kp = 10; // was previously 10
@@ -469,17 +497,65 @@ void auton() {
 	16. (optional) PRAY THAT IT WORKS
 	*/
 
-  // FIRST ALLIANCE (dont picasso)
+  // LEFT BLUE
   brakeDrive(); // set motors to brake
   mogoTime(-100, 600, false); // lower amogus for 750 msec
-	liftTime(-25, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
+  liftTime(-25, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
   amogus.setPosition(0,degrees);
   lift1.setPosition(0,degrees);
   unitDrive(-17 / UNITSIZE); // scoop up mogo
-  //mogoDeg(45.0, 375);  // takes 750 for lift to move by 90°, so it should to half that to move 45°.
-  mogoDeg(120,375); // TEMPORARY
+  mogoDeg(120,375);
   unitDrive(6 / UNITSIZE);
-  // OTHER ALLIANCE GOAL
+	// LEFT YELLOW
+	driveTo(-1.5,-0.7,false,true); // grab it
+	picasso.set(true);// picasso that mogo
+	mogoTo(-10,0);
+	// LEFT RED
+	driveTo(-2.5,1.5,true,false,9);
+	mogoTo(45, 375);
+	// PLATFORM LEFT YELLOW
+	liftTo(66,0);
+	driveTo(-0.125,-1.667);
+	mogoTo(-10,0);
+	Claw(true); // drop it
+	// SHOVE TALL MOGO TO OTHER SIDE
+	liftTo(-10,0); // lower lift
+	unitDrive(-0.5); // back up to turn
+	driveTo(0, -1.25); // drop left red
+	mogoTo(90,0);
+	driveTo(0, 1, true);
+	// RIGHT YELLOW + PLATFORM
+	driveTo(1.5,0,false,true,9); // get it
+	liftTo(66,0); // raise lift
+	driveTo(0.15,-1.667); // go to platform
+	Claw(false); // drop it
+	// RIGHT BLUE
+	liftTo(-10,0); // lower lift
+	driveTo(2.5, -1, false, true, 9); // get it
+	// RIGHT RED
+	driveTo(2.5,1.5);
+	mogoTo(-10,0); // lower amogus
+	driveTo(1.333,2.5, true); // get it
+	mogoTo(45,375); // lift amogus
+	unitDrive(-0.5); // back up
+	driveTo(1.667,-1); // bring to other side
+	mogoTo(-10, 375); // lower amogus
+	// ALIGN FOR PLATFORM
+	liftTo(66,0);
+	driveTo(2, 2.5); // dont hit the platform.
+	mogoTo(90);
+	driveTo(4 / 3, 2.5);
+  liftTo(0, 0); // bring down the platform. wait till it's done
+	pointAt(-100, 2.5); // point STRAIGHT
+  while (lift1.position(degrees) > 5) { // wait until lift is all the way down. but dont wait for too long or too short.
+    wait(10, msec);
+  }
+	lift1.setStopping(coast); // allow lift to get shoved a bit up.
+  // PARK
+  unitDrive(30 / UNITSIZE); // goes to about the middle of the platform... I think
+  balance(); // just in case its not balanced. I hope this works.*/
+	
+  /*// OTHER ALLIANCE GOAL
   gyroturn(-90); // align y axis
   picasso.set(true);
   // piccasso it, TEMPORARY.
@@ -507,7 +583,7 @@ void auton() {
   /*liftDeg(90, 20); // TEMPORARY RAISE IT
   driveTo(0,1.5); // TEMPORARY PLATFORM IT PART 1
   driveTo(0,1.7); // TEMPORARY PLATFORM IT PART 2
-  pointAt(0,3);*/
+  pointAt(0,3);
   //Claw(true);// TEMPORARY PLATFORM IT PART 3
   //liftDeg(-95, 20); // TEMPORARY LOWER IT
   //unitDrive(-1/4);// TEMPORARY
@@ -518,7 +594,7 @@ void auton() {
   driveTo(-2, -1,true);// TEMPORARY
   mogoTime(-100, 500);// TEMPORARY
   unitDrive(3);//driveTo(-2,2);// TEMPORARY
-  /*// GET FIRST YELLOW
+  // GET FIRST YELLOW
   driveTo(1.25, 1.5, false, true); // go there and close the claw
   //Claw(false);
 	// PICASSO RIGHT FAR ALLIANCE GOAL
