@@ -4,7 +4,7 @@
 /*    Author:       Benjamin                                                  */
 /*    Created:      sometime                                                  */
 /*    Description:  7700R code 2021-2022  Skills                              */
-/*               Benjamin 1-10-22                                             */
+/*               Benjamin 1-31-22                                             */
 /*----------------------------------------------------------------------------*/
 //7700R
 //Benjamin
@@ -165,7 +165,7 @@ void liftTo(double angle, int8_t WT = -1, int8_t speed = 100) {
   lift1.setVelocity(speed, percent);
   lift1.setStopping(hold);
 
-  lift1.spinTo(forward, 9 * angle, degrees, WT == -1);
+  lift1.spinFor(forward, 9 * angle - lift1.position(degrees), degrees, WT == -1);
   
   if (WT != -1) {
     wait(WT,msec);
@@ -206,7 +206,7 @@ void mogoTo(double angle, int WT = -1, int speed = 100) {
   amogus.setVelocity(speed, percent);
   amogus.setStopping(hold);
 
-  amogus.spinFor(forward, 5 * angle, degrees, WT == -1);
+  amogus.spinFor(forward, 5 * angle - amogus.position(degrees), degrees, WT == -1);
   
   if (WT != -1) {
     wait(WT,msec);
@@ -580,7 +580,7 @@ void auton() {
   driveTo(0,-1,true);
   //driveTo(0,0); // TEMPORARY
   driveTo(0, 1.5); // TEMPORARY SECOND GOAL
-  /*liftDeg(90, 20); // TEMPORARY RAISE IT
+  liftDeg(90, 20); // TEMPORARY RAISE IT
   driveTo(0,1.5); // TEMPORARY PLATFORM IT PART 1
   driveTo(0,1.7); // TEMPORARY PLATFORM IT PART 2
   pointAt(0,3);
