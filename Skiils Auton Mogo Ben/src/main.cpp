@@ -47,6 +47,7 @@ const long double pi = 3.1415926535897932384626433832795028841971693993751058209
 #define Diameter 3.25
 // tile size
 #define UNITSIZE 23.75
+#define MOGO_DIST 14
 
 void pre_auton(void) {
   vexcodeInit();
@@ -292,7 +293,7 @@ void unitDrive(double target, bool endClaw = false, double maxTime = 2000000000,
     drive(speed, speed, 10);
     currTime += 0.01;
     olderror = error;
-    if (endClaw && error <= 0 && claw.value()) { // close claw b4 it goes backwards.
+    if (endClaw && error <= 1 && claw.value()) { // close claw b4 it goes backwards.
 	    Claw(false);
     }
   }
@@ -398,7 +399,7 @@ vex::thread POS(printPos);*/
 
 void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double offset = 0, double maxTime = 2000000000, double accuracy = 0.25) {
   // point towards target
-  wait(200,msec);
+  wait(200, msec);
 	// get positional data
   double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
   pointAt(x2, y2, Reverse, x1, y1, 1);
@@ -476,73 +477,53 @@ void auton() {
   }
 
   Gyro.setRotation(GPS.rotation(degrees) - 90, degrees);
-  //printPos();
-	/*
-	FULL STRAT: (POV: BLUE SIDE)
-	1.  GET LEFT RED WITH AMOGUS
-	2.  GET RIGHT RED WITH LIFT1
-	3.  SHOVE RIGHT YELLOW TO RED SIDE
-	4.	PLATFORM RIGHT RED ON MIDDLE
-	5. 	DROP LEFT RED WITH AMOGUS
-	6. 	GET RIGHT YELLOW
-	7. 	PICASSO RIGHT BLUE
-	8.  PLATFORM RIGHT YELLOW ON RIGHT
-	9. 	GET & PLATFORM LEFT RED ON LEFT
-	10.	GET LEFT BLUE WITH AMOGUS
-	11. GET & PLATFORM LEFT YELLOW NEAR MIDDLE 
-	12. GET CENTER YELLOW WITH LIFT1
-	13. GO TO BLUE SIDE & ALIGN TO PARK
-	14. LOWER BLUE PLATFORM
-	15. PARK
-	16. (optional) PRAY THAT IT WORKS
-	*/
-
   // LEFT BLUE
   brakeDrive(); // set motors to brake
   mogoTime(-100, 600, false); // lower amogus for 750 msec
-  liftTime(-25, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
+  liftTime(-50, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
   amogus.setPosition(0,degrees);
   lift1.setPosition(0,degrees);
   unitDrive(-17 / UNITSIZE); // scoop up mogo
-  mogoDeg(120,375);
+  mogoDeg(120, 375);
   unitDrive(6 / UNITSIZE);
 	// LEFT YELLOW
-	driveTo(-1.5,-0.7,false,true); // grab it
-	picasso.set(true);// picasso that mogo
-	mogoTo(-10,0);
+	driveTo(-1.4,-0.7,false,true); // grab it
+	picasso.set(true); // picasso that mogo
+	mogoDeg(-150, 0);
+	liftTo(66,0);
 	// LEFT RED
-	driveTo(-2.5,1.5,true,false,9);
+	driveTo(-2.5,1.5,true);
 	mogoTo(45, 375);
 	// PLATFORM LEFT YELLOW
-	liftTo(66,0);
-	driveTo(-0.125,-1.667);
-	mogoTo(-10,0);
+	//pointAt(0,-1.667);
+  driveTo(-0.125,-1.667);
+	mogoDeg(-130,0);
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
 	liftTo(-10,0); // lower lift
 	unitDrive(-0.5); // back up to turn
-	driveTo(0, -1.25); // drop left red
+	driveTo(-0.125, -1.25); // drop left red
 	mogoTo(90,0);
-	driveTo(0, 1, true);
+	driveTo(-0.125, 1, true);
 	// RIGHT YELLOW + PLATFORM
-	driveTo(1.5,0,false,true,9); // get it
+	driveTo(1.5,0.05,false,true,9); // get it
 	liftTo(66,0); // raise lift
-	driveTo(0.15,-1.667); // go to platform
-	Claw(false); // drop it
+	driveTo(1/16, -1.667); // go to platform
+	Claw(true); // drop it
 	// RIGHT BLUE
 	liftTo(-10,0); // lower lift
-	driveTo(2.5, -1, false, true, 9); // get it
+	driveTo(2.5, -1.5, false, true, MOGO_DIST); // get it
+  liftTo(66, 0); // raise lift. Less friction
 	// RIGHT RED
-	driveTo(2.5,1.5);
-	mogoTo(-10,0); // lower amogus
+	driveTo(1.75,1.75);
+	mogoDeg(-130,0); // lower amogus
 	driveTo(1.333,2.5, true); // get it
 	mogoTo(45,375); // lift amogus
 	unitDrive(-0.5); // back up
 	driveTo(1.667,-1); // bring to other side
-	mogoTo(-10, 375); // lower amogus
+	mogoDeg(-130, 375); // lower amogus
 	// ALIGN FOR PLATFORM
-	liftTo(66,0);
-	driveTo(2, 2.5); // dont hit the platform.
+	driveTo(2, 2.4); // dont hit the platform.
 	mogoTo(90);
 	driveTo(4 / 3, 2.5);
   liftTo(0, 0); // bring down the platform. wait till it's done
