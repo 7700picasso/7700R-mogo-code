@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       Benjamin                                                  */
+/*    Author:       Benjamin and Sean                                         */
 /*    Created:      sometime                                                  */
 /*    Description:  7700R code 2021-2022  Skills                              */
 /*               Benjamin 1-31-22                                             */
@@ -36,6 +36,8 @@
 
 #include "vex.h"
 #include <math.h>
+#include <vector>
+
 
 using namespace vex;
 
@@ -73,6 +75,34 @@ void drive(int lspeed, int rspeed, int wt){
 }
 //use to go forward,backwards,left right etc,turning if your stupid
 //use mmDrive to go forward and backwards,use gyro to turn
+
+
+struct Integral {
+  std::vector<double> values;
+  uint16_t size = 1;
+
+  void innit() {
+    values = {};
+
+    for (int i = 0; i < size; i++)
+      values.push_back(0);
+  }
+
+  void addVal(double val) {
+    for (int i = size; i > 0; --i)
+      values[i] = values[i - 1];
+    values[0] = val;
+  }
+
+  double mean() {
+    double sum = 0;
+    for (int i = 0; i < size; i++)
+      sum += values[i];
+    return sum / size;
+  }
+};
+
+
 
 double minRots() {    
   double rots[] = {
@@ -114,6 +144,9 @@ double degToTarget(double x1, double y1, double x2, double y2, bool Reverse = fa
 	*/
 }
 
+
+
+
 void brakeDrive() {
   leftDrive1.stop(brake);
   leftDrive2.stop(brake);
@@ -136,7 +169,7 @@ void coastDrive() {
   leftDrive2.stop(coast);
   leftmiddle.stop(coast);
   rightDrive1.stop(coast); //coast drive
-  rightDrive2.stop(coast); //saif put notes here with examples 
+  rightDrive2.stop(coast); //put notes here with examples 
   rightmiddle.stop(coast);
   // actually set brake stop type to coast
   leftDrive1.setStopping(coast);
@@ -159,7 +192,7 @@ void liftDeg(double angle, int WT = -1, int speed = 100) {
   }
   else {
     lift1.stop(hold);
-  }
+  }                                            //more math 
 }
 
 void liftTo(double angle, int8_t WT = -1, int8_t speed = 100) {
@@ -306,8 +339,36 @@ void unitDrive(double target, bool endClaw = false, double maxTime = 2000000000,
 //if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
 //1 sec if your good
 
-void balance() { // WIP
+void balance() {
+  double pitch = Gyro.pitch(degrees);
+  double oldpitch = pitch;                //work in progress code
+  unitDrive(30 / UNITSIZE);
   Brain.Screen.clearScreen();
+  double Kp = 4;
+  double Ki = 0.5;
+  double Kd = 90;
+  double speed;
+
+  Integral pitches;
+  pitches.size = 10;
+  pitches.innit();
+
+double stopAng = 5; // stop when fabs(pitch) is at most 5°
+while(fabs(pitch) > stopAng)
+{
+  pitch = Gyro.pitch(degrees);
+  pitches.addVal(pitch);
+  speed = Kp * pitch + Ki * pitches.mean() + Kd * (pitch - oldpitch);
+  drive(speed, speed, 10);
+  oldpitch = pitch;
+  Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
+}
+brakeDrive();
+Brain.Screen.printAt(1, 150, "i am done ");
+}
+
+/*void balance() { // WIP
+  Brain.Screen.clearScreen();                         testing old balance code 
   double Kp = 4;
   double Ki = 1;
   double Kd = 110; // we need it to go backwards when it starts tipping the other way.
@@ -329,7 +390,7 @@ void balance() { // WIP
 	}
 	brakeDrive();
 	Brain.Screen.printAt(1, 150, "i am done ");
-}
+}*/
 
 
 void gyroturn(double target, double accuracy = 1) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
