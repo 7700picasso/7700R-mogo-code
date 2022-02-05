@@ -36,8 +36,6 @@
 
 #include "vex.h"
 #include <math.h>
-#include <vector>
-
 
 using namespace vex;
 
@@ -45,11 +43,11 @@ using namespace vex;
 competition Competition;
 
 // define your global Variables here
-const long double pi = 3.14159265358979323846264338327950288419716939937510582097494459230; // much more accurate than 3.14
+const long double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825; // much more accurate than 3.14. accurate enough to go across the universe and be within an atom of error
+
 #define Diameter 3.25
-// tile size
-#define UNITSIZE 23.75
-#define MOGO_DIST 14
+#define UNITSIZE 23.75 // tile size
+#define MOGO_DIST 5
 
 void pre_auton(void) {
   vexcodeInit();
@@ -75,34 +73,6 @@ void drive(int lspeed, int rspeed, int wt){
 }
 //use to go forward,backwards,left right etc,turning if your stupid
 //use mmDrive to go forward and backwards,use gyro to turn
-
-
-struct Integral {
-  std::vector<double> values;
-  uint16_t size = 1;
-
-  void innit() {
-    values = {};
-
-    for (int i = 0; i < size; i++)
-      values.push_back(0);
-  }
-
-  void addVal(double val) {
-    for (int i = size; i > 0; --i)
-      values[i] = values[i - 1];
-    values[0] = val;
-  }
-
-  double mean() {
-    double sum = 0;
-    for (int i = 0; i < size; i++)
-      sum += values[i];
-    return sum / size;
-  }
-};
-
-
 
 double minRots() {    
   double rots[] = {
@@ -296,7 +266,7 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void unitDrive(double target, bool endClaw = false, double maxTime = 2000000000, double accuracy = 0.25) {
+void unitDrive(double target, bool endClaw = false, double clawDist = 1, double maxTime = 2147483647, double accuracy = 0.25) {
 	double Kp = 10; // was previously 50/3
 	double Ki = 2.5; // to increase speed if its taking too long.
 	double Kd = 20; // was previously 40/3
@@ -326,7 +296,7 @@ void unitDrive(double target, bool endClaw = false, double maxTime = 2000000000,
     drive(speed, speed, 10);
     currTime += 0.01;
     olderror = error;
-    if (endClaw && error <= 1 && claw.value()) { // close claw b4 it goes backwards.
+    if (endClaw && error <= clawDist && claw.value()) { // close claw b4 it goes backwards.
 	    Claw(false);
     }
   }
@@ -339,40 +309,12 @@ void unitDrive(double target, bool endClaw = false, double maxTime = 2000000000,
 //if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
 //1 sec if your good
 
-void balance() {
-  double pitch = Gyro.pitch(degrees);
-  double oldpitch = pitch;                //work in progress code
-  unitDrive(30 / UNITSIZE);
+void balance() { // WIP
   Brain.Screen.clearScreen();
-  double Kp = 4;
-  double Ki = 0.5;
-  double Kd = 90;
-  double speed;
-
-  Integral pitches;
-  pitches.size = 10;
-  pitches.innit();
-
-double stopAng = 5; // stop when fabs(pitch) is at most 5°
-while(fabs(pitch) > stopAng)
-{
-  pitch = Gyro.pitch(degrees);
-  pitches.addVal(pitch);
-  speed = Kp * pitch + Ki * pitches.mean() + Kd * (pitch - oldpitch);
-  drive(speed, speed, 10);
-  oldpitch = pitch;
-  Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
-}
-brakeDrive();
-Brain.Screen.printAt(1, 150, "i am done ");
-}
-
-/*void balance() { // WIP
-  Brain.Screen.clearScreen();                         testing old balance code 
   double Kp = 4;
   double Ki = 1;
   double Kd = 110; // we need it to go backwards when it starts tipping the other way.
-	double decay = 2/3; // integral decay
+	double decay = 0.5; // integral decay
   volatile double speed;
   volatile double pitch = Gyro.pitch(degrees);
   volatile double oldpitch = pitch;
@@ -390,10 +332,10 @@ Brain.Screen.printAt(1, 150, "i am done ");
 	}
 	brakeDrive();
 	Brain.Screen.printAt(1, 150, "i am done ");
-}*/
+}
 
 
-void gyroturn(double target, double accuracy = 1) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+/*void gyroturn(double target, double accuracy = 1) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.1;
   double Ki = 0.1;
   double Kd = 1.25;
@@ -415,13 +357,13 @@ void gyroturn(double target, double accuracy = 1) { // idk maybe turns the robot
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     olderror = error;
   }
-}
+}*/
 
 void pointAt(double x2, double y2, bool Reverse = false, double x1 = -GPS.yPosition(inches), double y1 = GPS.xPosition(inches), double accuracy = 1) { 
 	// point towards targetnss 
   x2 *= UNITSIZE, y2 *= UNITSIZE;
 	double target = degToTarget(x1, y1, x2, y2, Reverse, Gyro.rotation(degrees)); // I dont trust the gyro for finding the target, and i dont trst the gps with spinning
-	
+
 	// using old values bc they faster
 	double Kp = 1.1;
 	double Ki = 0.2;
@@ -458,7 +400,7 @@ bool runningAuto = 0;
 }
 vex::thread POS(printPos);*/
 
-void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double offset = 0, double maxTime = 2000000000, double accuracy = 0.25) {
+void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double offset = 0, double clawDist = 6, double maxTime = 2147483647, double accuracy = 0.25) {
   // point towards target
   wait(200, msec);
 	// get positional data
@@ -470,7 +412,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   // go to target
   //volatile double distSpeed = 100;
   double target = (1 - Reverse * 2) * (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) - offset);
-  unitDrive(target / UNITSIZE, endClaw, maxTime, accuracy);
+  unitDrive(target / UNITSIZE, endClaw, clawDist, maxTime, accuracy);
 
   /*double Kp = 10; // was previously 10
 	double Ki = 1; // to increase speed if its taking too long.
@@ -524,8 +466,6 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   */
 }
 
-
-// This auton is the skills auton, not tested
 void auton() {
   backHook.set(false); // bring up back hook to prevent problems
   picasso.set(false); // un-picasso nothing
@@ -542,43 +482,49 @@ void auton() {
   brakeDrive(); // set motors to brake
   mogoTime(-100, 600, false); // lower amogus for 750 msec
   liftTime(-50, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
-  amogus.setPosition(0,degrees);
-  lift1.setPosition(0,degrees);
+  amogus.setPosition(0, degrees);
+  lift1.setPosition(0, degrees);
   unitDrive(-17 / UNITSIZE); // scoop up mogo
   mogoDeg(120, 375);
   unitDrive(6 / UNITSIZE);
 	// LEFT YELLOW
-	driveTo(-1.4,-0.7,false,true); // grab it
+	driveTo(-1.4,0,false,true,5); // grab it
 	picasso.set(true); // picasso that mogo
 	mogoDeg(-150, 0);
-	liftTo(66,0);
+	liftTo(75,0);
 	// LEFT RED
-	driveTo(-2.5,1.5,true);
+  //backHook.set(true);
+	driveTo(-2.5,1.5,true,false,-5);
+  //backHook.set(false);
 	mogoTo(45, 375);
 	// PLATFORM LEFT YELLOW
 	//pointAt(0,-1.667);
-  driveTo(-0.125,-1.667);
+  driveTo(-0.175,-1.7);
 	mogoDeg(-130,0);
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
+  unitDrive(-0.5); // back up to turn
 	liftTo(-10,0); // lower lift
-	unitDrive(-0.5); // back up to turn
-	driveTo(-0.125, -1.25); // drop left red
+  backHook.set(true);
+	//driveTo(-0.125, -1.25); // drop left red
 	mogoTo(90,0);
 	driveTo(-0.125, 1, true);
 	// RIGHT YELLOW + PLATFORM
-	driveTo(1.5,0.05,false,true,9); // get it
-	liftTo(66,0); // raise lift
-	driveTo(1/16, -1.667); // go to platform
+	driveTo(1.5,0.05,false,true,0,6); // get it
+	liftTo(75,0); // raise lift
+	driveTo(0.5, -1.7); // go to platform
 	Claw(true); // drop it
 	// RIGHT BLUE
 	liftTo(-10,0); // lower lift
-	driveTo(2.5, -1.5, false, true, MOGO_DIST); // get it
+  "🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
+	driveTo(2.5, -1.5, false, true, MOGO_DIST-13, 1); // get it
   liftTo(66, 0); // raise lift. Less friction
-	// RIGHT RED
+  
+  
+	// RIGHT RED 
 	driveTo(1.75,1.75);
 	mogoDeg(-130,0); // lower amogus
-	driveTo(1.333,2.5, true); // get it
+	driveTo(1.4,2.5, true); // get it
 	mogoTo(45,375); // lift amogus
 	unitDrive(-0.5); // back up
 	driveTo(1.667,-1); // bring to other side
@@ -589,10 +535,10 @@ void auton() {
 	driveTo(4 / 3, 2.5);
   liftTo(0, 0); // bring down the platform. wait till it's done
 	pointAt(-100, 2.5); // point STRAIGHT
-  while (lift1.position(degrees) > 5) { // wait until lift is all the way down. but dont wait for too long or too short.
+  while (lift1.position(degrees) > 45) { // wait until lift is all the way down. but dont wait for too long or too short.
     wait(10, msec);
   }
-	lift1.setStopping(coast); // allow lift to get shoved a bit up.
+	lift1.spin(forward, 0, percent); // allow lift to get shoved a bit up.
   // PARK
   unitDrive(30 / UNITSIZE); // goes to about the middle of the platform... I think
   balance(); // just in case its not balanced. I hope this works.*/
