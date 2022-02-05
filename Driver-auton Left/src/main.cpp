@@ -129,7 +129,7 @@ void mogoTime() {//int speed, int duration, bool stop = false) {
   }
 }
 
-void startMogoTime(int speed, int duration, bool stop = false) {
+/*void startMogoTime(int speed, int duration, bool stop = false) {
   if (!isDriver) {
     mogoSpeed = speed, 
     mogoDuration = duration; 
@@ -142,7 +142,7 @@ thread liftControl(mogoTime);
 //makes mogo go up or down
 // its the lift speed then wait time
 //example mogo(-100,1200);  so mogo 100% for 1200 msc
-// 100 is up and -100 is down,I know this 
+// 100 is up and -100 is down,I know this */
 
 void clawopen (bool open)
 {claw.set (open);}
@@ -249,16 +249,16 @@ void gyroturn(double target){ //idk maybe turns the robot with the gyro,so dont 
 
 //wow maybe the auton code,this auton is the left side auton,works well
 void auton() {
-  startMogoTime(-100, 1500);
+  mogoDeg(-130,0);
   backhooks(false);
-  inchDrive(-66, 100); //go forward
+  inchDrive(-62, 100); //go forward
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
-  startMogoTime(100, 1000);
+  mogoDeg(56, 375);
   wait(250, msec);
-  gyroturn(-123);
+  gyroturn(-100);
   claw.set(true);
-  inchDrive(37, 100);
+  inchDrive(30, 100);
   claw.set(false);
   wait(5, msec);
   gyroturn(-45);
@@ -333,13 +333,6 @@ void driver() {
   }
 }
 
-    
-    
-
-
-  
-
-  
 int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(auton);
