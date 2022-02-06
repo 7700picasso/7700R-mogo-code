@@ -299,7 +299,7 @@ claw.set(true); //open claw
   }
   picasso.set(false); // open the picasso who forgot to put this bruh
   inchDrive(-20);//drive backwards 25 inches to mogo
-  mogo(130); //pikup mogo
+  mogo(130,850); //pikup mogo
   picasso.set(true);//picasso that mogo
   mogo(-150,0); // mogo down to get the dropped mogo
   gyroturn(180, facing); //turn facing the field 
