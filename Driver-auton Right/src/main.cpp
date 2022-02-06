@@ -195,7 +195,7 @@ void inchDrive(double target, double lowerDist = 100000, double accuracy = 1) {
     drive(speed, speed, 10);
     olderror = error;
     if (target - error > lowerDist) {
-      lift1.spin(reverse,-100,percent);
+      amogus.spin(forward,-100,percent);
     }
   }
   brakeDrive();
@@ -284,16 +284,15 @@ void auton() {
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
   claw.set(false);//close claw,just picked up that yellow mogo
-  lift(20, 20); // bring it off a lift bc that might happen with 7700E
   inchDrive(-30,0);//go backwards 30 inches
   gyroturn(-90, facing); //turn 90 degress with the robots back facing the right side mogo
   inchDrive(5);//drive forward 10 inches to align and have time for the mogo to go down
   claw.set(true); // let go of mogo
-  if (lift1.position(degrees) > -300) { // if the mogo decides not to go down
+  if (amogus.position(degrees) > -300) { // if the mogo decides not to go down
     mogo(-130,750);//mogo goes down
   }
   inchDrive(-20); // drive backwards to alliance goal
-  mogo(130,850); //pikup mogo
+  mogo(130,1300); //pikup mogo
   picasso.set(true);//picasso that mogo
   mogo(-150,0); // mogo down to get the dropped mogo
   gyroturn(180, facing);// turn facing the yellow goal

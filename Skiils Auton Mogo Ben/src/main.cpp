@@ -43,16 +43,23 @@ using namespace vex;
 competition Competition;
 
 // define your global Variables here
+std::string str = "";
 const long double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825; // much more accurate than 3.14. accurate enough to go across the universe and be within an atom of error
 
 #define Diameter 3.25
 #define UNITSIZE 23.75 // tile size
 #define MOGO_DIST 5
+#define NOTE str = 
+
+// for red comments
 
 void pre_auton(void) {
   vexcodeInit();
   Gyro.calibrate();
   GPS.calibrate();
+  backHook.set(false);
+  picasso.set(false);
+	claw.set(true);
   wait(2000, msec);
 
   // All activities that occur before the competition starts
@@ -266,7 +273,7 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void unitDrive(double target, bool endClaw = false, double clawDist = 1, double maxTime = 2147483647, double accuracy = 0.25) {
+void unitDrive(double target, bool endClaw = false, double clawDist = 1, uint32_t maxTime = 4294967295, double accuracy = 0.25) {
 	double Kp = 10; // was previously 50/3
 	double Ki = 2.5; // to increase speed if its taking too long.
 	double Kd = 20; // was previously 40/3
@@ -286,15 +293,14 @@ void unitDrive(double target, bool endClaw = false, double clawDist = 1, double 
   rightmiddle.setPosition(0, rev);
 	 
   volatile double sum = 0;
-  volatile double currTime = 0;
+  uint32_t startTime = vex::timer::system();
 	 
-  while((fabs(error) > accuracy || fabs(speed) > 10) && currTime < maxTime) {
+  while((fabs(error) > accuracy || fabs(speed) > 10) && vex::timer::system() - startTime < maxTime) {
     // did this late at night but this while is important 
     error = target - minRots() * Diameter * pi; //the error gets smaller when u reach ur target
     sum = sum * decay + error;
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
-    currTime += 0.01;
     olderror = error;
     if (endClaw && error <= clawDist && claw.value()) { // close claw b4 it goes backwards.
 	    Claw(false);
@@ -311,8 +317,8 @@ void unitDrive(double target, bool endClaw = false, double clawDist = 1, double 
 
 void balance() { // WIP
   Brain.Screen.clearScreen();
-  double Kp = 4;
-  double Ki = 1;
+  double Kp = 2;
+  double Ki = -0.1;
   double Kd = 110; // we need it to go backwards when it starts tipping the other way.
 	double decay = 0.5; // integral decay
   volatile double speed;
@@ -399,8 +405,8 @@ bool runningAuto = 0;
   }
 }
 vex::thread POS(printPos);*/
-
-void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double offset = 0, double clawDist = 6, double maxTime = 2147483647, double accuracy = 0.25) {
+//                                                        if this runs for 4.3 billion msecs, then skills is broken, and our battery is magical v
+void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, double offset = 0, double clawDist = 6, uint32_t maxTime = 4294967295, double accuracy = 0.25) {
   // point towards target
   wait(200, msec);
 	// get positional data
@@ -466,10 +472,29 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   */
 }
 
+
+
+
+
+
+
 void auton() {
+  NOTE"            R             RRRR            RRRR  RRRRRRRRRRRRRRRRRR       RRRRRRRR       ";
+  NOTE"           RRR            RRRR            RRRR  RRRRRRRRRRRRRRRRRR    RRRRRRRRRRRRRR    ";
+  NOTE"          RRRRR           RRRR            RRRR         RRRR          RRRRR      RRRRR   ";
+  NOTE"         RRRRRRR          RRRR            RRRR         RRRR         RRRR          RRRR  ";
+  NOTE"        RRRR RRRR         RRRR            RRRR         RRRR         RRRR          RRRR  ";
+  NOTE"       RRRR   RRRR        RRRR            RRRR         RRRR         RRRR          RRRR  ";
+  NOTE"      RRRR     RRRR       RRRR            RRRR         RRRR         RRRR          RRRR  ";
+  NOTE"     RRRRRRRRRRRRRRR      RRRR            RRRR         RRRR         RRRR          RRRR  ";
+  NOTE"    RRRRRRRRRRRRRRRRR     RRRR            RRRR         RRRR         RRRR          RRRR  ";
+  NOTE"   RRRR           RRRR     RRRRR        RRRRR          RRRR          RRRRR      RRRRR   ";
+  NOTE"  RRRR             RRRR      RRRRRRRRRRRRRR            RRRR           RRRRRRRRRRRRRR    ";
+  NOTE" RRRR               RRRR        RRRRRRRR               RRRR              RRRRRRRR       ";
+
   backHook.set(false); // bring up back hook to prevent problems
   picasso.set(false); // un-picasso nothing
-	Claw(true); // open claw
+	claw.set(true); // open claw
 
   //runningAuto = true;
 
@@ -478,6 +503,22 @@ void auton() {
   }
 
   Gyro.setRotation(GPS.rotation(degrees) - 90, degrees);
+
+NOTE "AUTO PLAN:";
+NOTE "START ON RED SIDE LEFT\n";
+/*
+  1)  PICASSO LEFT BLUE
+  2)  CLAW LEFT YELLOW
+  3)  MOGO LIFT LEFT RED 
+  4)  PLATFORM LEFT YELLOW 
+  5)  DROP LEFT RED ON RED SIDE
+  6)  SHOVE TALL YELLOW TO BLUE WITH MOGO LIFT
+  7)  GET + PLATFORM RIGHT YELLOW
+  8)  CLAW RIGHT BLUE
+  9)  MOGO LIFT RIGHT RED + BRING IT TO RED SIDE 
+  10) PARK ON BLUE SIDE
+*/
+
   // LEFT BLUE
   brakeDrive(); // set motors to brake
   mogoTime(-100, 600, false); // lower amogus for 750 msec
@@ -493,46 +534,42 @@ void auton() {
 	mogoDeg(-150, 0);
 	liftTo(75,0);
 	// LEFT RED
-  //backHook.set(true);
-	driveTo(-2.5,1.5,true,false,-5);
-  //backHook.set(false);
+	driveTo(-1.5,1.5);
+  driveTo(-2.25,1.5,true,false,0,0,2000);
 	mogoTo(45, 375);
 	// PLATFORM LEFT YELLOW
-	//pointAt(0,-1.667);
-  driveTo(-0.175,-1.7);
+  driveTo(-0.175,-1.8,false,false,0,0,5000);
 	mogoDeg(-130,0);
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
   unitDrive(-0.5); // back up to turn
 	liftTo(-10,0); // lower lift
-  backHook.set(true);
-	//driveTo(-0.125, -1.25); // drop left red
+  driveTo(-0.125, -1.25); // drop left red
 	mogoTo(90,0);
 	driveTo(-0.125, 1, true);
 	// RIGHT YELLOW + PLATFORM
-	driveTo(1.5,0.05,false,true,0,6); // get it
-	liftTo(75,0); // raise lift
-	driveTo(0.5, -1.7); // go to platform
+	driveTo(1.5,0.05,false,true,-6,6); // get right yellow
+	liftTo(75, 0); // raise lift
+	driveTo(+0.5, -2,false, false, 0,0,5000); // go to platform
 	Claw(true); // drop it
 	// RIGHT BLUE
+  unitDrive(-1/4);
 	liftTo(-10,0); // lower lift
-  "🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
-	driveTo(2.5, -1.5, false, true, MOGO_DIST-13, 1); // get it
-  liftTo(66, 0); // raise lift. Less friction
-  
-  
+  NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
+	driveTo(2.5,-1.5, false, true, MOGO_DIST - 13, 1, 4000); // get it. It should not take longer than 4 seconds
+  liftTo(70, 0); // raise lift. Less friction
 	// RIGHT RED 
 	driveTo(1.75,1.75);
 	mogoDeg(-130,0); // lower amogus
-	driveTo(1.4,2.5, true); // get it
-	mogoTo(45,375); // lift amogus
+	driveTo(1.3,2.5,true,false,10,0,2000); // get it
+	mogoTo(45, 375); // lift amogus
 	unitDrive(-0.5); // back up
 	driveTo(1.667,-1); // bring to other side
 	mogoDeg(-130, 375); // lower amogus
-	// ALIGN FOR PLATFORM
-	driveTo(2, 2.4); // dont hit the platform.
-	mogoTo(90);
-	driveTo(4 / 3, 2.5);
+	// ALIGN FOR PARKING
+	driveTo(2, 2.4, false,false,0,0,3000); // dont hit the platform.
+	mogoTo(90,0);
+	driveTo(4 / 3, 2.4, false,false,0,0,3000);
   liftTo(0, 0); // bring down the platform. wait till it's done
 	pointAt(-100, 2.5); // point STRAIGHT
   while (lift1.position(degrees) > 45) { // wait until lift is all the way down. but dont wait for too long or too short.
