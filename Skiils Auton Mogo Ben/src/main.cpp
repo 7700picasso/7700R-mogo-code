@@ -550,7 +550,7 @@ NOTE "START ON RED SIDE LEFT\n";
 	// RIGHT YELLOW + PLATFORM
 	driveTo(1.5,0.05,false,true,-6,6); // get right yellow
 	liftTo(75, 0); // raise lift
-	driveTo(+0.5, -2,false, false, 0,0,5000); // go to platform
+	driveTo(0.5,-2,false, false, 0, 0, 4500); // go to platform
 	Claw(true); // drop it
 	// RIGHT BLUE
   unitDrive(-1/4);
@@ -569,7 +569,7 @@ NOTE "START ON RED SIDE LEFT\n";
 	// ALIGN FOR PARKING
 	driveTo(2, 2.4, false,false,0,0,3000); // dont hit the platform.
 	mogoTo(90,0);
-	driveTo(4 / 3, 2.4, false,false,0,0,3000);
+	driveTo(4 / 3, 2.4, false,false,0,0,2000);
   liftTo(0, 0); // bring down the platform. wait till it's done
 	pointAt(-100, 2.5); // point STRAIGHT
   while (lift1.position(degrees) > 45) { // wait until lift is all the way down. but dont wait for too long or too short.
