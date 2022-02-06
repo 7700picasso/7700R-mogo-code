@@ -161,18 +161,17 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(double target, double lowerDist = -100000, double accuracy = 1) {
+void inchDrive(double target, double lowerDist = 100000, double accuracy = 1) {
   leftDrive1.setPosition(0,  rev);
   leftDrive2.setPosition(0,  rev); // might only need 1 of 3 of these but im a dumbass so leave it 
   leftmiddle.setPosition(0,  rev);
 
   double 
     speed,
-    inches = 0,
     error = target,
     olderror = error,
     Kp = 50 / 3, // about 16.667, was previously 10
-    Ki = 5, // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
+    Ki = 1, // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
     Kd = 40 / 3; // about 13.333, was previously 20.0
 
   double sum = 0;
@@ -193,23 +192,18 @@ void inchDrive(double target, double lowerDist = -100000, double accuracy = 1) {
     error = target - leftmiddle.position(rev) * Diameter * pi; //the error gets smaller when u reach ur target
     sum = sum * decay + error;
     speed = Kp * error + Ki * decay + Kd * (error - olderror); // big error go fast slow error go slow 
-    if (error < lowerDist) {
-      lift1.spin(forward,-100,percent);
-    }
     drive(speed, speed, 10);
     olderror = error;
- //inches = turns * Diameter * pi;
-    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", leftmiddle.position(rev)); //math fun
-    Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
-    Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
-    Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
+    if (target - error > lowerDist) {
+      lift1.spin(reverse,-100,percent);
+    }
   }
   brakeDrive();
   // update x and y
   double 
     r = leftmiddle.position(rev) * Diameter * pi / UNITSIZE,
     theta = Gyro.rotation(degrees) * pi / 180;
-  x += r * cos(theta), y += r * sin(theta);
+    x += r * cos(theta), y += r * sin(theta);
 
   Brain.Screen.printAt(50, 180, "Position:   (%.3f, %.3f)", x, y);
 }
@@ -251,7 +245,7 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
   double error = target;
   double olderror = error;
 
-  double lambda = 0.5;
+  double lambda = 0.5; // exponential decay rate
 
   double sum = 0;
   
@@ -277,34 +271,34 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
 
 //wow maybe the auton code,this auton is the right side auton,work in progress but works how is 
 void auton() {
-claw.set(true); //open claw
+  claw.set(true); // open claw
+  picasso.set(false); // open picasso
   while (Gyro.isCalibrating()) {
     wait(10,msec);
   }
   Gyro.setRotation(0,degrees);
 
   double facing = 0;
-  mogo(-130,0);
-  inchDrive(55,12);//go forward 55 inches
+  //mogo(-130,0);
+  inchDrive(55,6); //go forward 55 inches, lower lift at 6
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
   claw.set(false);//close claw,just picked up that yellow mogo
   lift(20, 20); // bring it off a lift bc that might happen with 7700E
-  inchDrive(-30);//go backwards 30 inches
+  inchDrive(-30,0);//go backwards 30 inches
   gyroturn(-90, facing); //turn 90 degress with the robots back facing the right side mogo
   inchDrive(5);//drive forward 10 inches to align and have time for the mogo to go down
-  claw.set(true);
-  if (lift1.position(degrees) > -300) {
+  claw.set(true); // let go of mogo
+  if (lift1.position(degrees) > -300) { // if the mogo decides not to go down
     mogo(-130,750);//mogo goes down
   }
-  picasso.set(false); // open the picasso who forgot to put this bruh
-  inchDrive(-20);//drive backwards 25 inches to mogo
+  inchDrive(-20); // drive backwards to alliance goal
   mogo(130,850); //pikup mogo
   picasso.set(true);//picasso that mogo
   mogo(-150,0); // mogo down to get the dropped mogo
-  gyroturn(180, facing); //turn facing the field 
+  gyroturn(180, facing);// turn facing the yellow goal
   inchDrive(-33); // get the mogo that was dropped.
-  mogo(45,375); // pikkup that mogo
+  mogo(45, 375); // pikkup that mogo
   gyroturn(-90,facing); // face mid (i think)
 }
 
