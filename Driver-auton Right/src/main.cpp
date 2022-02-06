@@ -303,9 +303,9 @@ claw.set(true); //open claw
   picasso.set(true);//picasso that mogo
   mogo(-150,0); // mogo down to get the dropped mogo
   gyroturn(180, facing); //turn facing the field 
-  inchdrive(-33); // get the mogo that was dropped.
+  inchDrive(-33); // get the mogo that was dropped.
   mogo(45,375); // pikkup that mogo
-  gyroturn(-90); // face mid (i think)
+  gyroturn(-90,facing); // face mid (i think)
 }
 
 //driver controls,dont change unless your jaehoon or sean
