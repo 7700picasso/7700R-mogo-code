@@ -284,7 +284,7 @@ claw.set(true); //open claw
   Gyro.setRotation(0,degrees);
 
   double facing = 0;
-  
+  mogo(-130,0);
   inchDrive(55,12);//go forward 55 inches
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
