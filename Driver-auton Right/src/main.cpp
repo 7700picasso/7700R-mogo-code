@@ -279,26 +279,24 @@ void auton() {
   Gyro.setRotation(0,degrees);
 
   double facing = 0;
-  //mogo(-130,0);
   inchDrive(55,6); //go forward 55 inches, lower lift at 6
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
   claw.set(false);//close claw,just picked up that yellow mogo
   inchDrive(-30,0);//go backwards 30 inches
   gyroturn(-90, facing); //turn 90 degress with the robots back facing the right side mogo
-  inchDrive(5);//drive forward 10 inches to align and have time for the mogo to go down
   claw.set(true); // let go of mogo
-  if (amogus.position(degrees) > -300) { // if the mogo decides not to go down
-    mogo(-130,750);//mogo goes down
-  }
-  inchDrive(-20); // drive backwards to alliance goal
+  inchDrive(-15); // drive backwards to alliance goal
   mogo(130,1300); //pikup mogo
   picasso.set(true);//picasso that mogo
   mogo(-150,0); // mogo down to get the dropped mogo
   gyroturn(180, facing);// turn facing the yellow goal
   inchDrive(-33); // get the mogo that was dropped.
-  mogo(45, 375); // pikkup that mogo
-  gyroturn(-90,facing); // face mid (i think)
+  mogo(60, 375); // pikkup that mogo
+  gyroturn(-100,facing); // face mid (i think)
+  /*inchDrive(35); // get mid... I think
+  claw.set(false);
+  inchDrive(-35);*/
 }
 
 //driver controls,dont change unless your jaehoon or sean
