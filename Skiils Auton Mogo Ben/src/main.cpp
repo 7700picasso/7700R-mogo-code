@@ -343,7 +343,7 @@ void balance() { // WIP
 
 void gyroturn(double target, double accuracy = 1) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
   double Kp = 1.1;
-  double Ki = 0.1;
+  double Ki = 0.2;
   double Kd = 1.25;
 	double decay = 0.5; // integral decay
 	
@@ -566,7 +566,7 @@ NOTE "START ON RED SIDE LEFT\n";
 	mogoTo(90,0);
 	driveTo(4 / 3, 2.4, false,false,0,0,2000);
   liftTo(0, 0); // bring down the platform. wait till it's done
-	gyroturn(-90 - mod(Gyro.rotation(degrees)-180, 360)-180); // point STRAIGHT
+	gyroturn(-90 - mod(Gyro.rotation(degrees)-180, 360)-180); // point STRAIGHT (I added back gyroturn just for this line xD)
   while (lift1.position(degrees) > 45) { // wait until lift is all the way down. but dont wait for too long or too short.
     wait(10, msec);
   }
