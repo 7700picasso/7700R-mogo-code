@@ -365,7 +365,7 @@ void balance() { // WIP
   }
 }*/
 
-void pointAt(double x2, double y2, bool Reverse = false, double x1 = -GPS.yPosition(inches), double y1 = GPS.xPosition(inches), double accuracy = 1) { 
+void pointAt(double x2, double y2, bool Reverse = false, double x1 = -GPS.yPosition(inches), double y1 = GPS.xPosition(inches), uint32_t maxTime = 4294967295, double accuracy = 1) { 
 	// point towards targetnss 
   x2 *= UNITSIZE, y2 *= UNITSIZE;
 	double target = degToTarget(x1, y1, x2, y2, Reverse, Gyro.rotation(degrees)); // I dont trust the gyro for finding the target, and i dont trst the gps with spinning
@@ -381,10 +381,11 @@ void pointAt(double x2, double y2, bool Reverse = false, double x1 = -GPS.yPosit
 	volatile double speed;
 	volatile double error = target;
 	volatile double olderror = error;
+  uint32_t startTime = vex::timer::system();
 	
 	target += Gyro.rotation(degrees); // I trust gyro better for turning.
 
-	while(fabs(error) > accuracy || fabs(error - olderror) > 0.05) { // fabs = absolute value while loop again
+	while((fabs(error) > accuracy || fabs(error - olderror) > 0.05) && vex::timer::system() - startTime < maxTime) { // fabs = absolute value while loop again
 		error = target - Gyro.rotation(degrees); //error gets smaller closer you get,robot slows down
 		sum = sum * decay + error;
 		speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
@@ -411,12 +412,12 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   wait(200, msec);
 	// get positional data
   double x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
-  pointAt(x2, y2, Reverse, x1, y1, 1);
+  pointAt(x2, y2, Reverse, x1, y1, maxTime / 2);
   x2 *= UNITSIZE, y2 *= UNITSIZE;
   x1 = -GPS.yPosition(inches), y1 = GPS.xPosition(inches);
 
   // go to target
-  //volatile double distSpeed = 100;
+  // volatile double distSpeed = 100;
   double target = (1 - Reverse * 2) * (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) - offset);
   unitDrive(target / UNITSIZE, endClaw, clawDist, maxTime, accuracy);
 
@@ -472,12 +473,6 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   */
 }
 
-
-
-
-
-
-
 void auton() {
   NOTE"            R             RRRR            RRRR  RRRRRRRRRRRRRRRRRR       RRRRRRRR       ";
   NOTE"           RRR            RRRR            RRRR  RRRRRRRRRRRRRRRRRR    RRRRRRRRRRRRRR    ";
@@ -513,7 +508,7 @@ NOTE "START ON RED SIDE LEFT\n";
   4)  PLATFORM LEFT YELLOW 
   5)  DROP LEFT RED ON RED SIDE
   6)  SHOVE TALL YELLOW TO BLUE WITH MOGO LIFT
-  7)  GET + PLATFORM RIGHT YELLOW
+  7)  CLAW + PLATFORM RIGHT YELLOW
   8)  CLAW RIGHT BLUE
   9)  MOGO LIFT RIGHT RED + BRING IT TO RED SIDE 
   10) PARK ON BLUE SIDE
@@ -555,15 +550,15 @@ NOTE "START ON RED SIDE LEFT\n";
 	// RIGHT BLUE
   unitDrive(-1/4);
 	liftTo(-10,0); // lower lift
-  NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
-	driveTo(2.5,-1.5, false, true, MOGO_DIST - 13, 1, 4000); // get it. It should not take longer than 4 seconds
+	driveTo(2.5,-1.5, false, true, 14, 2, 3000); // get it. It should not take longer than 4 seconds
   liftTo(70, 0); // raise lift. Less friction
 	// RIGHT RED 
-	driveTo(1.75,1.75);
+	driveTo(1.75,1.75,3000);
 	mogoDeg(-130,0); // lower amogus
 	driveTo(1.3,2.5,true,false,10,0,2000); // get it
 	mogoTo(45, 375); // lift amogus
-	unitDrive(-0.5); // back up
+  NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
+	unitDrive(-0.5); // back up. BACK UP YOU STUPID THING CAN YOU NOT FOLLOW DIRECTIONS 
 	driveTo(1.667,-1); // bring to other side
 	mogoDeg(-130, 375); // lower amogus
 	// ALIGN FOR PARKING
