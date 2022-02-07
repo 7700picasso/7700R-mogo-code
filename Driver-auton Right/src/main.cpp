@@ -293,7 +293,7 @@ void auton() {
   gyroturn(180, facing);// turn facing the yellow goal
   inchDrive(-33); // get the mogo that was dropped.
   mogo(60, 375); // pikkup that mogo
-  gyroturn(-100,facing); // face mid (i think)
+  gyroturn(-105,facing); // face mid (i think)
   /*inchDrive(35); // get mid... I think
   claw.set(false);
   inchDrive(-35);*/
