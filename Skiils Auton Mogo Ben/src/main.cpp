@@ -533,7 +533,7 @@ NOTE "START ON RED SIDE LEFT\n";
   driveTo(-2.25,1.5,true,false,0,0,2000);
 	mogoTo(45, 375);
 	// PLATFORM LEFT YELLOW
-  driveTo(-0.175,-1.8,false,false,0,0,5000);
+  driveTo(-0.1,-1.8,false,false,0,0,5000);
 	mogoDeg(-130,0);
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
