@@ -555,18 +555,18 @@ NOTE "START ON RED SIDE LEFT\n";
 	// RIGHT RED 
 	driveTo(1.75,1.75,3000);
 	mogoDeg(-130,0); // lower amogus
-	driveTo(1.3,2.5,true,false,10,0,2000); // get it
+	driveTo(1.3, 2.5, true, false, 10, 0, 2000); // get it
 	mogoTo(45, 375); // lift amogus
   NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
 	unitDrive(-0.5); // back up. BACK UP YOU STUPID THING CAN YOU NOT FOLLOW DIRECTIONS 
 	driveTo(1.667,-1); // bring to other side
 	mogoDeg(-130, 375); // lower amogus
 	// ALIGN FOR PARKING
-	driveTo(2, 2.4, false,false,0,0,3000); // dont hit the platform.
+	driveTo(2, 2.4, false, false, 0, 0, 3000); // dont hit the platform.
 	mogoTo(90,0);
-	driveTo(4 / 3, 2.4, false,false,0,0,2000);
+	driveTo(4 / 3, 2.4, false, false, 0, 0, 2000);
   liftTo(0, 0); // bring down the platform. wait till it's done
-	gyroturn(-90 - mod(Gyro.rotation(degrees)-180, 360)-180); // point STRAIGHT (I added back gyroturn just for this line xD)
+	gyroturn(90 - mod(Gyro.rotation(degrees)-180, 360)); // point STRAIGHT (I added back gyroturn just for this line xD)
   while (lift1.position(degrees) > 45) { // wait until lift is all the way down. but dont wait for too long or too short.
     wait(10, msec);
   }
