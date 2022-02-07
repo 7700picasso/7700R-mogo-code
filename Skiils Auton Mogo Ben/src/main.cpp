@@ -558,7 +558,7 @@ NOTE "START ON RED SIDE LEFT\n";
 	driveTo(1.3, 2.5, true, false, 10, 0, 2000); // get it
 	mogoTo(45, 375); // lift amogus
   NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
-	unitDrive(0.5); // back up. BACK UP YOU STUPID THING CAN YOU NOT FOLLOW DIRECTIONS 
+	unitDrive(0.5); // back up from the back so go forward.
 	driveTo(1.667,-1); // bring to other side
 	mogoDeg(-130, 375); // lower amogus
 	// ALIGN FOR PARKING
