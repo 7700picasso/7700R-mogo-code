@@ -275,7 +275,7 @@ void picassos (bool open) {
 
 void unitDrive(double target, bool endClaw = false, double clawDist = 1, uint32_t maxTime = 4294967295, double accuracy = 0.25) {
 	double Kp = 10; // was previously 50/3
-	double Ki = 2.5; // to increase speed if its taking too long.
+	double Ki = 2; // to increase speed if its taking too long.
 	double Kd = 20; // was previously 40/3
 	double decay = 0.5; // integral decay
 	
@@ -529,11 +529,11 @@ NOTE "START ON RED SIDE LEFT\n";
 	mogoDeg(-150, 0);
 	liftTo(75,0);
 	// LEFT RED
-	driveTo(-1.5,1.5);
+	driveTo(-1.4,1.5);
   driveTo(-2.25,1.5,true,false,0,0,2000);
 	mogoTo(45, 375);
 	// PLATFORM LEFT YELLOW
-  driveTo(-0.1,-1.8,false,false,0,0,5000);
+  driveTo(-0.04,-1.8, false, false,0,0,3500); // first value must be experimented with
 	mogoDeg(-130,0);
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
@@ -543,28 +543,29 @@ NOTE "START ON RED SIDE LEFT\n";
 	mogoTo(90,0);
 	driveTo(-0.125, 1, true);
 	// RIGHT YELLOW + PLATFORM
-	driveTo(1.5,0.05,false,true,-6,6); // get right yellow
-	liftTo(75, 0); // raise lift
-	driveTo(0.5,-2,false, false, 0, 0, 4500); // go to platform
+	driveTo(1.5,0.15,false,true,-6,6); // get right yellow
+	liftTo(80, 0); // raise lift
+	driveTo(0.5,-2,false, false, 0, 0, 3000); // go to platform
 	Claw(true); // drop it
+  lift1.stop(hold);
 	// RIGHT BLUE
-  unitDrive(-1/4);
-	liftTo(-10,0); // lower lift
-	driveTo(2.5,-1.5, false, true, 14, 2, 3000); // get it. It should not take longer than 4 seconds
+  unitDrive(-0.5);
+	liftTo(-10, 0); // lower lift
+	driveTo(2.5,-1.3, false, true, 3, 3, 5000); // get it. It should not take longer than 4 seconds
   liftTo(70, 0); // raise lift. Less friction
 	// RIGHT RED 
-	driveTo(1.75,1.75,3000);
-	mogoDeg(-130,0); // lower amogus
-	driveTo(1.3, 2.5, true, false, 10, 0, 2000); // get it
+	driveTo(1.75,1.667,4000);
+	mogoDeg(-130,375); // lower amogus
+	driveTo(1.3333, 2.5, true, false, 10, 0, 2000); // get it
 	mogoTo(45, 375); // lift amogus
-  NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
 	unitDrive(0.5); // back up from the back so go forward.
-	driveTo(1.667,-1); // bring to other side
+  NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
+	driveTo(1.667,-1,true); // bring to other side
 	mogoDeg(-130, 375); // lower amogus
 	// ALIGN FOR PARKING
 	driveTo(2, 2.4, false, false, 0, 0, 3000); // dont hit the platform.
 	mogoTo(90,0);
-	driveTo(4 / 3, 2.4, false, false, 0, 0, 2000);
+	driveTo(1.75, 2.4, false, false, 0, 0, 2000);
   liftTo(0, 0); // bring down the platform. wait till it's done
 	gyroturn(90 - mod(Gyro.rotation(degrees)-180, 360)); // point STRAIGHT (I added back gyroturn just for this line xD)
   while (lift1.position(degrees) > 45) { // wait until lift is all the way down. but dont wait for too long or too short.
@@ -572,7 +573,7 @@ NOTE "START ON RED SIDE LEFT\n";
   }
 	lift1.spin(forward, 0, percent); // allow lift to get shoved a bit up.
   // PARK
-  unitDrive(30 / UNITSIZE); // goes to about the middle of the platform... I think
+  unitDrive(29 / UNITSIZE); // goes to about the middle of the platform... I think
   balance(); // just in case its not balanced. I hope this works.*/
 	
   /*// OTHER ALLIANCE GOAL
