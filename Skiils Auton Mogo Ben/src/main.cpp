@@ -32,6 +32,9 @@
 // picasso              digital_out   A               
 // Gyro                 inertial      19              
 // GPS                  gps           9               
+// DistFront            distance      15              
+// DistBack             distance      16              
+// DistClaw             distance      17              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -302,7 +305,7 @@ void unitDrive(double target, bool endClaw = false, double clawDist = 1, uint32_
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
     olderror = error;
-    if (endClaw && error <= clawDist && claw.value()) { // close claw b4 it goes backwards.
+    if (endClaw && claw.value() && (DistClaw.objectDistance(inches) < 2 || error <= clawDist)) { // close claw b4 it goes backwards.
 	    Claw(false);
     }
   }
@@ -357,7 +360,7 @@ void gyroturn(double target, double accuracy = 1) { // idk maybe turns the robot
 
   while(fabs(error) > accuracy || fabs(speed) > 1) { //fabs = absolute value while loop again
     error = target - Gyro.rotation(degrees);; //error gets smaller closer you get,robot slows down
-    sum = sum * decay + error; // some testing tells me that 0.5 is a good decay rate
+    sum = sum * decay + error; 
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);

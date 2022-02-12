@@ -30,6 +30,9 @@
 // Inertial21           inertial      21              
 // picasso              digital_out   A               
 // Gyro                 inertial      19              
+// DistFront            distance      15              
+// DistBack             distance      16              
+// DistClaw             distance      17              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -279,7 +282,7 @@ void auton() {
   Gyro.setRotation(0,degrees);
 
   double facing = 0;
-  inchDrive(55,6); //go forward 55 inches, lower lift at 6
+  inchDrive(55, 6); //go forward 55 inches, lower lift at 6
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
   claw.set(false);//close claw,just picked up that yellow mogo

@@ -18,6 +18,9 @@ extern inertial Inertial21;
 extern digital_out picasso;
 extern inertial Gyro;
 extern gps GPS;
+extern distance DistFront;
+extern distance DistBack;
+extern distance DistClaw;
 
 /**
  * Used to initialize code/tasks/devices added using tools in VEXcode Pro.

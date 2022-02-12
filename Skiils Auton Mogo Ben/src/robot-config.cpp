@@ -23,6 +23,9 @@ inertial Inertial21 = inertial(PORT21);
 digital_out picasso = digital_out(Brain.ThreeWirePort.A);
 inertial Gyro = inertial(PORT19);
 gps GPS = gps(PORT9, 220.00, 50.00, mm, 90);
+distance DistFront = distance(PORT15);
+distance DistBack = distance(PORT16);
+distance DistClaw = distance(PORT17);
 
 // VEXcode generated functions
 // define variable for remote controller enable/disable
