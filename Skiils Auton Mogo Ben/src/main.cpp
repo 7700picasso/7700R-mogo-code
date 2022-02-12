@@ -4,7 +4,7 @@
 /*    Author:       Benjamin and Sean                                         */
 /*    Created:      sometime                                                  */
 /*    Description:  7700R code 2021-2022  Skills                              */
-/*               Benjamin 1-31-22                                             */
+/*               Benjamin 2-11-22                                             */
 /*----------------------------------------------------------------------------*/
 //7700R
 //Benjamin
@@ -577,7 +577,7 @@ NOTE "START ON RED SIDE LEFT\n";
 	// RIGHT BLUE
   unitDrive(-0.5);
 	liftTo(-10, 0); // lower lift
-	driveTo(2.45,-1.3, false, true, 3, 3, 5000); // get it. It should not take longer than 4 seconds
+	driveTo(2.45,-1.3, false, true, 3, 3, 5000); // get it. It should not take longer than 5 seconds
   liftTo(70, 0); // raise lift. Less friction
 	// RIGHT RED 
 	driveTo(1.8,1.667,4000);
