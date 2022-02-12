@@ -523,8 +523,8 @@ void auton() {
   while (Gyro.isCalibrating() || GPS.isCalibrating()) { // dont start until gyro and GPS are calibrated
     wait(10, msec);
   }
-
-  Gyro.setRotation(GPS.rotation(degrees) - 90, degrees);
+  Gyro.setRotation(GPS.rotation(degrees), degrees);
+  GPS.setRotation(GPS.rotation(degrees) - 90, degrees);
 
 NOTE "AUTO PLAN:";
 NOTE "START ON RED SIDE LEFT";
