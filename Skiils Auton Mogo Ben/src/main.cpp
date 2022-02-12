@@ -318,7 +318,7 @@ void unitDrive(double target, bool endClaw = false, double clawDist = 1, uint32_
 void balance() { // WIP
   Brain.Screen.clearScreen();
   double Kp = 2;
-  double Ki = -0.1;
+  double Ki = -0.1; // back up when we need it
   double Kd = 110; // we need it to go backwards when it starts tipping the other way.
 	double decay = 0.5; // integral decay
   volatile double speed;
@@ -327,8 +327,8 @@ void balance() { // WIP
 
   volatile double sum = 0;
 
-  double stopAng = 5; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
-  while(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 3) {
+  //double stopAng = 5; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
+  while(true) { //fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 3) {
   	pitch = Gyro.pitch(degrees);
   	sum = sum * decay + pitch;
   	speed = Kp * pitch + Ki * sum + Kd * (pitch - oldpitch);
@@ -421,35 +421,42 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   double target = (1 - Reverse * 2) * (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) - offset);
   unitDrive(target / UNITSIZE, endClaw, clawDist, maxTime, accuracy);
 
-  /*double Kp = 10; // was previously 10
-	double Ki = 1; // to increase speed if its taking too long.
-	double Kd = 20; // was previously 20.0
-	double decay = 0.5; // integral decay
+  /*return; // end cuz everything after this is experimental.
+
+  // experimental
+
+  double Kp = 10; // was previously 10
+  double Ki = 2; // to increase speed if its taking too long.
+  double Kd = 20; // was previously 20.0
+  double decay = 0.5; // integral decay
+  
   volatile double sum = 0;
-	      
-	volatile double speed;
+          
+  volatile double speed;
   volatile double error = target;
-	volatile double olderror = error;
+  volatile double olderror = error;
 
   volatile double dirError = 0;
   volatile double oldDirError = dirError;
   volatile double dirSpeed = 0;
   volatile double dirSum = 0;
+  volatile double oldDir = GPS.rotation(degrees);
+  volatile double oldL = leftmiddle.position(rev) * pi * Diameter;
+  volatile double oldR = rightmiddle.position(rev) * pi * Diameter;
 
   double dirKp = 1.1; // was previously 10
-	double dirKi = 0.5; // to increase speed if its taking too long.
-	double dirKd = 1.25; // was previously 20.0
-	double dirDecay = 0.5; // integral decay
-	 
+  double dirKi = 0.2; // to increase speed if its taking too long.
+  double dirKd = 1.25; // was previously 20.0
+  double dirDecay = 0.5; // integral decay
+     
   leftDrive1.setPosition(0, rev);
-	leftDrive2.setPosition(0, rev);
+  leftDrive2.setPosition(0, rev);
   leftmiddle.setPosition(0, rev);
   rightDrive1.setPosition(0, rev);
   rightDrive2.setPosition(0, rev);
   rightmiddle.setPosition(0, rev);
-	 
+     
   while(fabs(error) > accuracy || fabs(speed) > 10) {
-    // did this late at night but this while is important 
     bool overShot = fabs(degToTarget(x1, y1, x2, y2, Reverse)) > 100;
     target = -((Reverse + overShot) % 2) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)); // the error gets smaller when u reach ur target
     dirError = degToTarget(x1, y1, x2, y2, (Reverse + overShot) % 2);
@@ -458,19 +465,36 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
 
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     dirSpeed = dirKp * dirError + dirKi * dirSum + dirKd * (dirError - oldDirError);
-    drive(speed +0* dirSpeed, speed -0* dirSpeed, 10);
+    drive(speed + dirSpeed, speed - dirSpeed, 10);
     olderror = error;
     oldDirError = dirError;
+    
+    // r = (∆L + ∆R) / 2(θ - θ')
+    // P' = (x + r * ( sin (θ') - sin (θ) ), y + r * ( cos (θ') - cos (θ) ) )
 
-    x1 += (olderror - error) * cos(Gyro.rotation(degrees)),
-    y1 += (olderror - error) * sin(Gyro.rotation(degrees));
+    // to ensure nothing is undefined and stuff
+
+    double L = leftmiddle.position(rev) * pi * Diameter;
+    double R = rightmiddle.position(rev) * pi * Diameter;
+    double dir = GPS.rotation(degrees);
+    if (dir == oldDir) {
+      x1 += (olderror - error) * cos(dir),
+      y1 += (olderror - error) * sin(dir);
+    }
+    else {
+      double r = (L - oldL + R - oldR) / (oldDir - dir) / 2;
+      x1 += r * (sin(dir) - sin(oldDir));
+      y1 += r * (cos(dir) - cos(oldDir));
+    }
+    oldDir = dir;
+    oldL = L;
+    oldR = R;
 
     if (endClaw && error < 0 && claw.value()) { // close claw b4 it goes backwards.
-	    Claw(false);
+      Claw(false);
     }
   }
-	brakeDrive();
-  */
+  brakeDrive();*/
 }
 
 void auton() {
@@ -516,6 +540,7 @@ NOTE "START ON RED SIDE LEFT\n";
 
   // LEFT BLUE
   brakeDrive(); // set motors to brake
+  backHook.set(false);
   mogoTime(-100, 600, false); // lower amogus for 750 msec
   liftTime(-50, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
   amogus.setPosition(0, degrees);
@@ -524,157 +549,59 @@ NOTE "START ON RED SIDE LEFT\n";
   mogoDeg(120, 375);
   unitDrive(6 / UNITSIZE);
 	// LEFT YELLOW
-	driveTo(-1.4,0,false,true,5); // grab it
+	driveTo(-1.31,0,false,true,5); // grab it
 	picasso.set(true); // picasso that mogo
 	mogoDeg(-150, 0);
 	liftTo(75,0);
 	// LEFT RED
-	driveTo(-1.4,1.5);
-  driveTo(-2.25,1.5,true,false,0,0,2000);
-	mogoTo(45, 375);
+	driveTo(-1.4,1.6);
+  driveTo(-2.4,1.7,true,false,0,0,2000);
+	mogoTo(60, 375);
 	// PLATFORM LEFT YELLOW
-  driveTo(-0.04,-1.8, false, false,0,0,3500); // first value must be experimented with
-	mogoDeg(-130,0);
+  driveTo(0.2,-1.8, false, false,0,0,3500); // first value must be experimented witH
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
-  unitDrive(-0.5); // back up to turn
+  unitDrive(-0.5); // back up to turn ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;g
 	liftTo(-10,0); // lower lift
-  driveTo(-0.125, -1.25); // drop left red
+  driveTo(-0.425, -1.35,true,false,0,0); // drop left red
+  mogoDeg(-127,0);
+  driveTo(0, -1.35,false,false,0,0);
 	mogoTo(90,0);
 	driveTo(-0.125, 1, true);
 	// RIGHT YELLOW + PLATFORM
 	driveTo(1.5,0.15,false,true,-6,6); // get right yellow
 	liftTo(80, 0); // raise lift
-	driveTo(0.5,-2,false, false, 0, 0, 3000); // go to platform
+	driveTo(0.9,-2,false, false, 0, 0, 3000); // go to platform
 	Claw(true); // drop it
   lift1.stop(hold);
 	// RIGHT BLUE
   unitDrive(-0.5);
 	liftTo(-10, 0); // lower lift
-	driveTo(2.5,-1.3, false, true, 3, 3, 5000); // get it. It should not take longer than 4 seconds
+	driveTo(2.45,-1.3, false, true, 3, 3, 5000); // get it. It should not take longer than 4 seconds
   liftTo(70, 0); // raise lift. Less friction
 	// RIGHT RED 
-	driveTo(1.75,1.667,4000);
+	driveTo(1.8,1.667,4000);
 	mogoDeg(-130,375); // lower amogus
-	driveTo(1.3333, 2.5, true, false, 10, 0, 2000); // get it
+	driveTo(1.41, 2.63, true, false, 10, 0, 2000); // get it
 	mogoTo(45, 375); // lift amogus
 	unitDrive(0.5); // back up from the back so go forward.
   NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
 	driveTo(1.667,-1,true); // bring to other side
 	mogoDeg(-130, 375); // lower amogus
 	// ALIGN FOR PARKING
-	driveTo(2, 2.4, false, false, 0, 0, 3000); // dont hit the platform.
+	driveTo(2, 2.3, false, false, 0, 0, 3000); // dont hit the platform.
 	mogoTo(90,0);
-	driveTo(1.75, 2.4, false, false, 0, 0, 2000);
   liftTo(0, 0); // bring down the platform. wait till it's done
-	gyroturn(90 - mod(Gyro.rotation(degrees)-180, 360)); // point STRAIGHT (I added back gyroturn just for this line xD)
-  while (lift1.position(degrees) > 45) { // wait until lift is all the way down. but dont wait for too long or too short.
+	gyroturn(90 - mod(Gyro.rotation(degrees) - 180, 360)); // point STRAIGHT (I added back gyroturn just for this line xD)
+  uint32_t startTime = vex::timer::system();
+  while (lift1.position(degrees) > 45 && vex::timer::system() - startTime < 2667) { // wait until lift is all the way down. but dont wait for too long or too short.
     wait(10, msec);
   }
 	lift1.spin(forward, 0, percent); // allow lift to get shoved a bit up.
   // PARK
-  unitDrive(29 / UNITSIZE); // goes to about the middle of the platform... I think
-  balance(); // just in case its not balanced. I hope this works.*/
-	
-  /*// OTHER ALLIANCE GOAL
-  gyroturn(-90); // align y axis
-  picasso.set(true);
-  // piccasso it, TEMPORARY.
-  unitDrive(-4); //TMP PUSH TO OTHER SIDE
-  unitDrive(3); //TMP COME BACK
-  driveTo(-1.5, -1.5); // TMP
-  driveTo(1.95, -1.4, false, true); // go there and close the claw
-  // SHOVE FIRST YELLOW TO THE OTHER SIDE
-  liftDeg(90.0, 20);
-  driveTo(1.5, -1.5, true);
-  driveTo(1.5, 1,true);
-  // PLATFORM FIRST ALLIANCE GOAL ON MIDDLE (1st on platform)
-  driveTo(1.5, 0.5); // back up
-  // driveTo(0.5, 0.5); // ADD BACK IF RINGS GET IN THE WAY
-  driveTo(-0.15, 1.5); 
-  driveTo(-0.15, 1.667, false,false,1); // go into platform
-  //pointAt(-0.175, 3);
-  liftDeg(-95.0, 87);
-  Claw(true); // drop mogo
-	//mogoDeg(-50, 0); // start lowering the mogo in the back lift
-  //unitDrive(-1 / 4); // back up
-  driveTo(0,-1,true);
-  //driveTo(0,0); // TEMPORARY
-  driveTo(0, 1.5); // TEMPORARY SECOND GOAL
-  liftDeg(90, 20); // TEMPORARY RAISE IT
-  driveTo(0,1.5); // TEMPORARY PLATFORM IT PART 1
-  driveTo(0,1.7); // TEMPORARY PLATFORM IT PART 2
-  pointAt(0,3);
-  //Claw(true);// TEMPORARY PLATFORM IT PART 3
-  //liftDeg(-95, 20); // TEMPORARY LOWER IT
-  //unitDrive(-1/4);// TEMPORARY
-  mogoDeg(-110, 0); // TEMPORARY
-  driveTo(-1.5, 1.5,true);// TEMPORARY
-  driveTo(-2.25, 1.5,true);// TEMPORARY
-  mogoDeg(45); // TEMPORARY
-  driveTo(-2, -1,true);// TEMPORARY
-  mogoTime(-100, 500);// TEMPORARY
-  unitDrive(3);//driveTo(-2,2);// TEMPORARY
-  // GET FIRST YELLOW
-  driveTo(1.25, 1.5, false, true); // go there and close the claw
-  //Claw(false);
-	// PICASSO RIGHT FAR ALLIANCE GOAL
-	driveTo(1.25, 2, true);
-	liftDeg(90, 0); // start raising lift
-	mogoDeg(100, 375);
-	driveTo(1.25, 1.5); // back up
-  while (amogus.position(degrees) < 490) { // mack sure it acutally picassos
-    wait(10, msec);
-  }
-	picasso.set(true);
-  // PLATFORM FIRST YELLOW ON RIGHT (2nd on platform)
-	driveTo(1 / 3, 1.5);
-	driveTo(1 / 3, 1.25); // go into platform
-	Claw(true);
-	liftDeg(-95, 20); // start lowering lift
-	unitDrive(-1 / 4); // back up
-  // GET FIRST ALLIANCE (WHICH WAS DROPPED PRIOR)
-	pointAt(-1 / 3, 1.5); // turn so that lift doesn't hit platform while we wait.
-	wait(250, msec); // pause bc you probably need to
-	driveTo(-1 / 3, 1.5, false, true); // go there close claw
-  //Claw(false);
-  liftDeg(90.0, 250);
-  // PLATFORM FIRST ALLIANCE ON LEFT (3rd on platform)
-	driveTo(-1 / 3, 1.75);
-	Claw(true); // drop it. good boi.
-	liftDeg(-95, 20); // start lowering lift
-	unitDrive(-1 / 4); // back up
-	// GET LAST ALLIANCE WITH AMOGUS
-	driveTo(-2, 1.5, true); // go backwards to mogo
-	mogoDeg(50, 0); // raise by 50 degrees (mogo is already lowered)
-  while (amogus.position(degrees) < 45 * 5) { // mack sure it goes up far enough b4 it continues
-    wait(10, msec);
-  }
-  // GET LEFT YELLOW
-	driveTo(5 / 3, 0.5, false, true); // go there and close claw
-	//Claw(false);
-	liftDeg(90.0, 20);
-  // PLATFORM LEFT YELLOW NEAR MID
-  driveTo(-1 / 6, 1.5);
-	driveTo(-1 / 6, 1.75); // go into platform
-	Claw(true);
-	liftDeg(-95, 20); // start lowering lift
-	unitDrive(-1 / 4); // back up
-  // GET TALL GOAL
-	driveTo(-2 / 45, 0.4, false, true); // dont to too close but also not too far. also closes claw after
-	//Claw(false); // grab it.
-	liftDeg(90, 20); // start raising the lift.
-  // ALIGN TO PARK
-	driveTo(-2, -2.5); // dont hit the platform.
-	driveTo(-4 / 3, -2.5);
-  liftDeg(-95, 0); // bring down the platform. wait till it's done
-  while (lift1.position(degrees) > 5) { // wait until lift is all the way down. but dont wait for too long or too short.
-    wait(10, msec);
-  }
-	lift1.setStopping(coast); // allow lift to get shoved a bit up.
-  // PARK
-  unitDrive(30 / UNITSIZE); // goes to about the middle of the platform... I think
-  balance(); // just in case its not balanced. I hope this works.*/
+  //unitDrive(29 / UNITSIZE); // goes to about the middle of the platform... I think
+  unitDrive(49.32732 - 12);
+  // balance(); // just in case its not balanced. I hope this works.*/
 }
 
 //driver controls,dont change unless your jaehoon or sean

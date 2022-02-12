@@ -421,35 +421,42 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   double target = (1 - Reverse * 2) * (sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) - offset);
   unitDrive(target / UNITSIZE, endClaw, clawDist, maxTime, accuracy);
 
-  /*double Kp = 10; // was previously 10
-	double Ki = 1; // to increase speed if its taking too long.
-	double Kd = 20; // was previously 20.0
-	double decay = 0.5; // integral decay
+  return; // end
+
+  // experimental
+
+  double Kp = 10; // was previously 10
+  double Ki = 2; // to increase speed if its taking too long.
+  double Kd = 20; // was previously 20.0
+  double decay = 0.5; // integral decay
+  
   volatile double sum = 0;
-	      
-	volatile double speed;
+          
+  volatile double speed;
   volatile double error = target;
-	volatile double olderror = error;
+  volatile double olderror = error;
 
   volatile double dirError = 0;
   volatile double oldDirError = dirError;
   volatile double dirSpeed = 0;
   volatile double dirSum = 0;
+  volatile double oldDir = GPS.rotation(degrees);
+  volatile double oldL = leftmiddle.position(rev) * pi * Diameter;
+  volatile double oldR = rightmiddle.position(rev) * pi * Diameter;
 
   double dirKp = 1.1; // was previously 10
-	double dirKi = 0.5; // to increase speed if its taking too long.
-	double dirKd = 1.25; // was previously 20.0
-	double dirDecay = 0.5; // integral decay
-	 
+  double dirKi = 0.2; // to increase speed if its taking too long.
+  double dirKd = 1.25; // was previously 20.0
+  double dirDecay = 0.5; // integral decay
+     
   leftDrive1.setPosition(0, rev);
-	leftDrive2.setPosition(0, rev);
+  leftDrive2.setPosition(0, rev);
   leftmiddle.setPosition(0, rev);
   rightDrive1.setPosition(0, rev);
   rightDrive2.setPosition(0, rev);
   rightmiddle.setPosition(0, rev);
-	 
+     
   while(fabs(error) > accuracy || fabs(speed) > 10) {
-    // did this late at night but this while is important 
     bool overShot = fabs(degToTarget(x1, y1, x2, y2, Reverse)) > 100;
     target = -((Reverse + overShot) % 2) * sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)); // the error gets smaller when u reach ur target
     dirError = degToTarget(x1, y1, x2, y2, (Reverse + overShot) % 2);
@@ -458,19 +465,37 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
 
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     dirSpeed = dirKp * dirError + dirKi * dirSum + dirKd * (dirError - oldDirError);
-    drive(speed +0* dirSpeed, speed -0* dirSpeed, 10);
+    drive(speed + dirSpeed, speed - dirSpeed, 10);
     olderror = error;
     oldDirError = dirError;
+    /*
+    r = (∆L + ∆R) / 2(θ - θ')
+    P' = (x + r * ( sin (θ') - sin (θ) ), y + r * ( cos (θ') - cos (θ) ) )
+    */
 
-    x1 += (olderror - error) * cos(Gyro.rotation(degrees)),
-    y1 += (olderror - error) * sin(Gyro.rotation(degrees));
+    // to ensure nothing is undefined and stuff
+
+    double L = leftmiddle.position(rev) * pi * Diameter;
+    double R = rightmiddle.position(rev) * pi * Diameter;
+    double dir = GPS.rotation(degrees);
+    if (dir == oldDir) {
+      x1 += (olderror - error) * cos(dir),
+      y1 += (olderror - error) * sin(dir);
+    }
+    else {
+      double r = (L - oldL + R - oldR) / (oldDir - dir) / 2;
+      x1 += r * (sin(dir) - sin(oldDir));
+      y1 += r * (cos(dir) - cos(oldDir));
+    }
+    oldDir = dir;
+    oldL = L;
+    oldR = R;
 
     if (endClaw && error < 0 && claw.value()) { // close claw b4 it goes backwards.
-	    Claw(false);
+      Claw(false);
     }
   }
-	brakeDrive();
-  */
+  brakeDrive();
 }
 
 void auton() {
