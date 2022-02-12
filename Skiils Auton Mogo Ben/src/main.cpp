@@ -527,7 +527,7 @@ void auton() {
   Gyro.setRotation(GPS.rotation(degrees) - 90, degrees);
 
 NOTE "AUTO PLAN:";
-NOTE "START ON RED SIDE LEFT\n";
+NOTE "START ON RED SIDE LEFT";
 /*
   1)  PICASSO LEFT BLUE
   2)  CLAW LEFT YELLOW

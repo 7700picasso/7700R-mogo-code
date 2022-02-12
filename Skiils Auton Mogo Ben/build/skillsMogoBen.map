@@ -3466,11 +3466,11 @@ Linker script and memory map
  *(.rodata)
  *(.rodata.*)
  .rodata.str1.1
-                0x00000000038057a0      0x4b8 build/src/main.o
-                                        0x4b9 (size before relaxing)
+                0x00000000038057a0      0x4b7 build/src/main.o
+                                        0x4b8 (size before relaxing)
  .rodata.str1.1
-                0x0000000003805c58       0x2e /Applications/VEXcode Pro V5.app/Contents/Resources/sdk/vexv5/libv5rt.a(v5_startup.c.obj)
- *fill*         0x0000000003805c86        0x2 
+                0x0000000003805c57       0x2e /Applications/VEXcode Pro V5.app/Contents/Resources/sdk/vexv5/libv5rt.a(v5_startup.c.obj)
+ *fill*         0x0000000003805c85        0x3 
  .rodata._ZN3vex3revE
                 0x0000000003805c88        0x4 /Applications/VEXcode Pro V5.app/Contents/Resources/sdk/vexv5/libv5rt.a(vex_global.cpp.obj)
                 0x0000000003805c88                vex::rev
