@@ -604,7 +604,7 @@ NOTE "START ON RED SIDE LEFT";
   // PARK
   //unitDrive(29 / UNITSIZE); // goes to about the middle of the platform... I think
   unitDrive(37.32732 / UNITSIZE); // umm is this too much cus it more than last time
-  wait(750,msec);
+  wait(750,msec); // wait before continuing
   balance(); // just in case its not balanced. I hope this works.*/
 }
 
