@@ -603,7 +603,8 @@ NOTE "START ON RED SIDE LEFT";
 	lift1.spin(forward, 0, percent); // allow lift to get shoved a bit up.
   // PARK
   //unitDrive(29 / UNITSIZE); // goes to about the middle of the platform... I think
-  unitDrive(37.32732 / UNITSIZE);
+  unitDrive(37.32732 / UNITSIZE); // umm is this too much cus it more than last time
+  wait(750,msec);
   balance(); // just in case its not balanced. I hope this works.*/
 }
 
