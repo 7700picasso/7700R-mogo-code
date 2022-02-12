@@ -585,12 +585,12 @@ NOTE "START ON RED SIDE LEFT\n";
 	driveTo(1.41, 2.63, true, false, 10, 0, 2000); // get it
 	mogoTo(45, 375); // lift amogus
 	unitDrive(0.5); // back up from the back so go forward.
-  NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
 	driveTo(1.667,-1,true); // bring to other side
 	mogoDeg(-130, 375); // lower amogus
 	// ALIGN FOR PARKING
-	driveTo(2, 2.3, false, false, 0, 0, 3000); // dont hit the platform.
 	mogoTo(90,0);
+	driveTo(2, 2.3, false, false, 0, 0, 3000); // dont hit the platform.
+  NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
   liftTo(0, 0); // bring down the platform. wait till it's done
 	gyroturn(90 - mod(Gyro.rotation(degrees) - 180, 360)); // point STRAIGHT (I added back gyroturn just for this line xD)
   uint32_t startTime = vex::timer::system();
@@ -600,8 +600,8 @@ NOTE "START ON RED SIDE LEFT\n";
 	lift1.spin(forward, 0, percent); // allow lift to get shoved a bit up.
   // PARK
   //unitDrive(29 / UNITSIZE); // goes to about the middle of the platform... I think
-  unitDrive(49.32732 - 12);
-  // balance(); // just in case its not balanced. I hope this works.*/
+  unitDrive(37.32732 / UNITSIZE);
+  balance(); // just in case its not balanced. I hope this works.*/
 }
 
 //driver controls,dont change unless your jaehoon or sean
