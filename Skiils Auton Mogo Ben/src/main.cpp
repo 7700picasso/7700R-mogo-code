@@ -443,7 +443,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
   volatile double oldDirError = dirError;
   volatile double dirSpeed = 0;
   volatile double dirSum = 0;
-  volatile double oldDir = GPS.rotation(degrees);
+  volatile double oldDir = Gyro.rotation(degrees);
   volatile double oldL = leftmiddle.position(rev) * pi * Diameter;
   volatile double oldR = rightmiddle.position(rev) * pi * Diameter;
 
@@ -479,7 +479,7 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
 
     double L = leftmiddle.position(rev) * pi * Diameter;
     double R = rightmiddle.position(rev) * pi * Diameter;
-    double dir = GPS.rotation(degrees);
+    double dir = Gyro.rotation(degrees);
     if (dir == oldDir) {
       x1 += (olderror - error) * cos(dir),
       y1 += (olderror - error) * sin(dir);
