@@ -61,8 +61,8 @@ void pre_auton(void) {
   Gyro.calibrate();
   GPS.calibrate();
   backHook.set(false);
-  picasso.set(false);
-	claw.set(true);
+  //picasso.set(false);
+	claw.set(false);
   wait(2000, msec);
 
   // All activities that occur before the competition starts
@@ -320,9 +320,9 @@ void unitDrive(double target, bool endClaw = false, double clawDist = 1, uint32_
 
 void balance() { // WIP
   Brain.Screen.clearScreen();
-  double Kp = 2;
-  double Ki = -0.1; // back up when we need it
-  double Kd = 110; // we need it to go backwards when it starts tipping the other way.
+  double Kp = 1.2;
+  double Ki = 0; // back up when we need it
+  double Kd = 60; // we need it to go backwards when it starts tipping the other way.
 	double decay = 0.5; // integral decay
   volatile double speed;
   volatile double pitch = Gyro.pitch(degrees);
@@ -330,8 +330,8 @@ void balance() { // WIP
 
   volatile double sum = 0;
 
-  //double stopAng = 5; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
-  while(true) { //fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 3) {
+  double stopAng = 0.1; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
+  while(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 0.01) {
   	pitch = Gyro.pitch(degrees);
   	sum = sum * decay + pitch;
   	speed = Kp * pitch + Ki * sum + Kd * (pitch - oldpitch);
@@ -543,7 +543,6 @@ NOTE "START ON RED SIDE LEFT";
 
   // LEFT BLUE
   brakeDrive(); // set motors to brake
-  backHook.set(false);
   mogoTime(-100, 600, false); // lower amogus for 750 msec
   liftTime(-50, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
   amogus.setPosition(0, degrees);
@@ -591,19 +590,22 @@ NOTE "START ON RED SIDE LEFT";
 	driveTo(1.667,-1,true); // bring to other side
 	mogoDeg(-130, 375); // lower amogus
 	// ALIGN FOR PARKING
+  driveTo(2, 1.5, false, false, 0, 0, 3000); // get close. Next thing must be very precise
 	mogoTo(90,0);
-	driveTo(2, 2.3, false, false, 0, 0, 3000); // dont hit the platform.
+	driveTo(2, 2.5, false, false, 0, 0, 3000); // dont hit the platform.
+	//gyroturn(90 - mod(Gyro.rotation(degrees) - 180, 360)); // point STRAIGHT (I added back gyroturn just for this line xD)
   NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
+  unitDrive(0.4);
   liftTo(0, 0); // bring down the platform. wait till it's done
-	gyroturn(90 - mod(Gyro.rotation(degrees) - 180, 360)); // point STRAIGHT (I added back gyroturn just for this line xD)
   uint32_t startTime = vex::timer::system();
   while (lift1.position(degrees) > 45 && vex::timer::system() - startTime < 2667) { // wait until lift is all the way down. but dont wait for too long or too short.
     wait(10, msec);
   }
 	lift1.spin(forward, 0, percent); // allow lift to get shoved a bit up.
   // PARK
+
   //unitDrive(29 / UNITSIZE); // goes to about the middle of the platform... I think
-  unitDrive(37.32732 / UNITSIZE); // umm is this too much cus it more than last time
+  unitDrive(45 / UNITSIZE); // umm is this too much cus it more than last time
   wait(750,msec); // wait before continuing
   balance(); // just in case its not balanced. I hope this works.*/
 }
