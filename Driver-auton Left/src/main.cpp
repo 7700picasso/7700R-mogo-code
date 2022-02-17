@@ -172,97 +172,137 @@ void picassos (bool open)
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(double target, int speed){
+void inchDrive(double target, double lowerDist = 100000, double accuracy = 1) {
   leftDrive1.setPosition(0,  rev);
-    leftDrive2.setPosition(0,  rev);//might only need 1 of 3 of these but im a dumbass so leave it 
+  leftDrive2.setPosition(0,  rev); // might only need 1 of 3 of these but im a dumbass so leave it 
   leftmiddle.setPosition(0,  rev);
-  double inches = 0.0;
-  double turns= 0.0;
-  double error = target; 
-  double olderror = error; 
-  double kp=16.6667;
-  double ki = 5;
-  double kd = 13.333333;
+
+  double 
+    speed,
+    error = target,
+    olderror = error,
+    Kp = 50 / 3, // about 16.667, was previously 10
+    Ki = 1, // to increase speed if its taking too long. Adds a bit over 50% speed when 12 inches left.
+    Kd = 40 / 3; // about 13.333, was previously 20.0
+
   double sum = 0;
-  int i = 0;
-  
-  //dont use the drive function you dumbass
-  //use inchdrive,this took me a while to code :(
-  //its target/inches/amount then speed/percentage
-  //examples
-  //inchDrive(55, 100); go 55in forward at 100%
-  //inchDrive(-55, 100); go 55in backwards at 100%
+  double decay = 0.5;
 
-  while(fabs(error)>1.0){
-    //did this late at night but this while is important 
-   //fabs = absolute value
-    //heading= Gyro.rotation(degrees);
+  /*
+  dont use the drive function you dumbass AND DONT USE "//" for multiple lines
+  use inchdrive,this took me a while to code :(
+  its target/inches/amount then speed/percentage
+  examples
+  inchDrive(55, 100); go 55in forward at 100%
+  inchDrive(-55, 100); go 55in backwards at 100%
+  */
+
+  while(fabs(error) > accuracy){
+    // did this late at night but this while is important 
+    // fabs = absolute value
+    error = target - leftmiddle.position(rev) * Diameter * pi; //the error gets smaller when u reach ur target
+    sum = sum * decay + error;
+    speed = Kp * error + Ki * decay + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
-    turns =leftmiddle.position(rev);
-    inches = turns * Diameter * pi;   //took and hour to fix this I think,was off by like 10 inches lol
     olderror = error;
-    error = target - inches; //the error gets smaller when u reach ur target
- //inches = turns * Diameter * pi;
-    sum = sum * 0.993 + error;
-    speed = kp*error + ki * sum / i++ + kd*(error-olderror); //big error go fast slow error go slow 
-
-    Brain.Screen.printAt(1, 40, "turns = %0.2f    ", turns); //math fun
-    Brain.Screen.printAt(1, 60, "speed = %0.2f    ", speed);
-    Brain.Screen.printAt(1, 100, "inches = %.2f  f", inches);
-    Brain.Screen.printAt(1, 120, "error = %.2f  f", error);
+    if (target - error > lowerDist) {
+      amogus.spin(forward,-100,percent);
+    }
   }
-   
-  drive(0,0,0);
+  brakeDrive();
 }
 
 //if gyro needs calibrating add a 10ms wait or something
  
-void gyroturn(double target){ //idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
-  double kp = 2.0;
-  double ki = 0.2;
-  double kd = 16.0;
-  Gyro.setRotation(0, degrees); //centers,calibrates gyro to 0
-  double heading = 0.0;
+void gyroturn(double target, double &idealDir) { // idk maybe turns the robot with the gyro,so dont use the drive function use the gyro
+  double Kp = 1.25; // was 2.0
+  double Ki = 0.1; // adds a bit less than 50% when there is 90° left.
+  double Kd = 1.0; // was 16.0
+ 
+  double currentDir = Gyro.rotation(degrees);
   double speed = 100;
   double error = target;
-  double olderror=error;
+  double olderror = error;
+
+  double lambda = 0.5; // exponential decay rate
 
   double sum = 0;
-  int i = 0;
-  while(fabs(error)>2.0){ //fabs = absolute value while loop again
-    heading = Gyro.rotation(degrees);
-    olderror=error;
-    error = target-heading; //error gets smaller closer you get,robot slows down
-    sum = sum * 0.993 + error;
+  
+  idealDir += target;
+  target = currentDir + idealDir - Gyro.rotation(degrees);
+  
+  while(fabs(error) > 1.25){ //fabs = absolute value while loop again
+    currentDir = Gyro.rotation(degrees);
+    error = target - currentDir; //error gets smaller closer you get,robot slows down
+    sum = sum * lambda + error;
+    speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, -speed, 10);
-    speed = kp * error + ki * sum / i++ + kd * (error - olderror); //big error go fast slow error go slow 
-    Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", heading); //math thing again,2 decimal places
+    Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir); //math thing again,2 decimal places
     Brain.Screen.printAt(1, 60, "speed = %0.2f    degrees", speed);
     //all ths print screen helps test to make sure gyro not broke
+    olderror = error;
   }
-  drive(0,0,0);
-  heading= Gyro.rotation(degrees);//prints the gyro rotation degress
-  Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", heading);
+  brakeDrive();
+  currentDir = Gyro.rotation(degrees); //prints the gyro rotation degress
+  Brain.Screen.printAt(1, 40, "heading = %0.2f    degrees", currentDir);
 }
 
 
 
 //wow maybe the auton code,this auton is the left side auton,works well
 void auton() {
-  mogoDeg(-130,0);
-  backhooks(false);
-  inchDrive(-62, 100); //go forward
-  Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
-  Brain.Screen.print("I'm dumb");//this shows the code works 
-  mogoDeg(56, 375);
-  wait(250, msec);
-  gyroturn(-100);
-  claw.set(true);
-  inchDrive(30, 100);
-  claw.set(false);
-  wait(5, msec);
-  gyroturn(-45);
-  inchDrive(-57, 100);
+  // THIS STUFF BEFORE THE LINE THAT SAYS "AUTO 1" NEEDS TO GO BEFORE BOTH AUTOS.
+  claw.set(true); // open claw
+  picasso.set(false); // open picasso
+    backhooks(false); // raise hook so it doesn't get in the way
+  
+  while (Gyro.isCalibrating()) {
+    wait(10,msec);
+  }
+  Gyro.setRotation(0,degrees);
+
+  double facing = 0;
+  double mogoStopDist = 6; // STOP THIS MANY UNITS BEFORE A MOGO. FEEL FREE TO CHANGE
+  "AUTO 1";
+  "SIDE-PICASSO";
+  "START AT THE HALFWAY LINE NEXT TO THE ALLIANCE GOAL, FACING IT WITH THE CLAW. SEE https://cdn.discordapp.com/attachments/875890646714576906/944007778526175282/Left_auto_SIDE-PICASSO.png FOR REFERENCE";
+  // SIDE
+  inchDrive(61.19 - mogoStopDist); // GO TO THE MOGO
+  claw.set(false); // CLAW IT
+  // PICASSO
+  // WE WILL APPROACH THIS FROM THE DIAGONAL.
+  inchDrive(-36.714 + mogoStopDist,0) // GO TO THE DIAGONAL OF APPROACH. LOWER MOGO LIFT.
+  gyroturn(-30-11.3, facing); // POINT MOGO LIFT AT THE ALLIANCE GOAL. change the 30.
+  claw.set(true); // DROP SIDE
+  inchDrive(-20, 0); // GET MOGO INTO MOGO LIFT.
+  mogoDeg(130,1000); // BRING GOAL INTO PICASSO.
+  picasso.set(true); // PICASSO IT.
+  // GET SIDE BUT WITH MOGO LIFT
+  gyroturn(180,facing); // FACE IT
+  mogoDeg(-140,750); // LOWER MOGO LIFT
+  inchDrive(-24); // GET MOGO INTO LIFT
+  mogoDeg(60,500); // RAISE LIFT
+  gyroturn(-90,facing); // FACE MID
+  break; // END
+  "AUTO 2:";
+  "MID-SIDE";
+  "START IN THE CORNER, CLAW FACING MID. CENTER OF ROBOT SHOULD BE IN THE CENTER OF THE TILE";
+  // MID
+  inchDrive(84.85, 6); // GO TO MID and LOWER MOGO LIFT
+  claw.set(false); // CLAW IT
+  liftDeg(10,0) // RAISE LIFT BY 10° TO REDUCE FRICTION
+  // SIDE
+  gyroturn(45, facing); // FACE SIDE WITH MOGO LIFT
+  inchDrive(-36); // GET MOGO INTO MOGO LIFT
+  mogoDeg(60, 500); // RAISE MOGO LIFT
+  // GO HOME & DROP SIDE
+  gyroturn(90, facing); // FACE HOMEZONE
+  inchDrive(36); // GO INTO HOMEZONE
+  gyroturn(-90,facing); // TURN TO DUMP SIDE GOAL
+  mogoDeg(-90,250); // LOWER MOGO LIFT
+  inchDrive(-10); // BACK UP TO DROP MOGO IN A BETTER PLACE
+  inchDrive(10); // FINISH DROPPING MOGO
+  gyroturn(-90,facing); // point kinda towards alliance goal
 }
 
 //driver controls,dont change unless your jaehoon or sean
