@@ -103,7 +103,7 @@ void coastDrive() {
 void lift(double angle, int WT = -1, double speed = 100) { // WT of -1 means wait for completion
   // gear ratio is 1 / 9
   lift1.setVelocity(speed, percent);
-  lift1.spinFor(forward, 9 * angle, degrees, WT == -1); // wait for competion is determined by whether or not WT is -1
+  lift1.spinFor(forward, 7 * angle, degrees, WT == -1); // wait for competion is determined by whether or not WT is -1
 
   if (WT >= 0)
     wait(WT, msec);
@@ -282,6 +282,10 @@ void auton() {
   Gyro.setRotation(0,degrees);
 
   double facing = 0;
+  
+  "AUTO NUMBER 1";
+  "SIDE-PICASSO-MID";
+  // SIDE
   inchDrive(55, 6); //go forward 55 inches, lower lift at 6
   Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
   Brain.Screen.print("I'm dumb");//this shows the code works 
@@ -289,6 +293,7 @@ void auton() {
   inchDrive(-30,0);//go backwards 30 inches
   gyroturn(-90, facing); //turn 90 degress with the robots back facing the right side mogo
   claw.set(true); // let go of mogo
+  // PICASSO
   inchDrive(-15); // drive backwards to alliance goal
   mogo(130,1300); //pikup mogo
   picasso.set(true);//picasso that mogo
@@ -296,10 +301,36 @@ void auton() {
   gyroturn(180, facing);// turn facing the yellow goal
   inchDrive(-33); // get the mogo that was dropped.
   mogo(60, 375); // pikkup that mogo
-  gyroturn(-105,facing); // face mid (i think)
-  /*inchDrive(35); // get mid... I think
+  // MID
+  "BELOW THIS LINE NEEDS FINE TUNING";
+  inchDrive(15); // AVOID RINGS
+  gyroturn(-135,facing); // face mid (i think)
+  inchDrive(35); // get mid... I think
   claw.set(false);
-  inchDrive(-35);*/
+  inchDrive(-35);
+  break;
+  // END
+  "AUTO NUMBER 2:";
+  "MID-PICASSO-SIDE";
+  "START IN THE CORNER FACING MID. CENTER OF ROBOT SHOULD BE ON CENTER OF TILE";
+  double mogoStopDist = 6; // STOP THIS MANY UNITS BEFORE A MOGO. FEEL FREE TO CHANGE
+  // MID
+  inchDrive(84.85 - mogoStopDist, 8); // GO TO MID and LOWER MOGO LIFT. CHANGE THE '6.'
+  claw.set(false); // CLAW IT
+  lift(10, 0); // RAISE LIFT BY 10° TO REDUCE FRICTION
+  // PICASSO
+  inchDrive(-50.91 + mogoStopDist, 0); // ALIGN WITH ALLIANCE GOAL ON Y-AXIS.
+  gyroturn(-45, facing); // FACE ALLIANCE GOAL
+  inchDrive(-15); // GET IT IN MOGO LIFT
+  mogo(130,1000); // BRING THAT MOGO INTO PICASSO
+  picasso.set(true); // PICASSO THAT MOGO
+  // SIDE
+  mogo(-140,0); // START LOWERING MOGO LIFT
+  inchDrive(15); // GO BACK TO WHEREVER IT WAS B4 THE LINE THAT SAYS "GET IT IN MOGO LIFT" FROM SECTION "PICASSO"
+  gyroturn(-90, facing); // FACE MOGO LIFT TO SIDE GOAL
+  inchDrive(-36 + mogoStopDist); // GET MOGO IN LIFT
+  mogo(60,500); // RAISE MOGO LIFT BY 60°
+  inchDrive(50); // RETURN TO HOME ZONE
 }
 
 //driver controls,dont change unless your jaehoon or sean
