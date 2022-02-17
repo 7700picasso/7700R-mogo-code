@@ -315,7 +315,7 @@ void auton() {
   "START IN THE CORNER FACING MID. CENTER OF ROBOT SHOULD BE ON CENTER OF TILE";
   double mogoStopDist = 6; // STOP THIS MANY UNITS BEFORE A MOGO. FEEL FREE TO CHANGE
   // MID
-  inchDrive(84.85 - mogoStopDist, 8); // GO TO MID and LOWER MOGO LIFT. CHANGE THE '6.'
+  inchDrive(84.85 - mogoStopDist, 8); // GO TO MID and LOWER MOGO LIFT.
   claw.set(false); // CLAW IT
   lift(10, 0); // RAISE LIFT BY 10° TO REDUCE FRICTION
   // PICASSO
