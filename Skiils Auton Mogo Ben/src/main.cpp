@@ -305,7 +305,7 @@ void unitDrive(double target, bool endClaw = false, double clawDist = 1, uint32_
     speed = Kp * error + Ki * sum + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
     olderror = error;
-    if (endClaw && claw.value() && (DistClaw.objectDistance(inches) < 2 || error <= clawDist)) { // close claw b4 it goes backwards.
+    if (endClaw && claw.value() && (/*DistClaw.objectDistance(inches) < 2 ||*/ error <= clawDist)) { // close claw b4 it goes backwards.
 	    Claw(false);
     }
   }
@@ -328,16 +328,19 @@ void balance() { // WIP
   volatile double pitch = Gyro.pitch(degrees);
   volatile double oldpitch = pitch;
 
-  volatile double sum = 0;
-
-  double stopAng = 0.1; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
-  while(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 0.01) {
+  double stopAng = 20; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
+  while(true) { //(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 0.005) {
   	pitch = Gyro.pitch(degrees);
-  	sum = sum * decay + pitch;
-  	speed = Kp * pitch + Ki * sum + Kd * (pitch - oldpitch);
-  	drive(speed, speed, 10);
+  	speed = Kp * pitch;
+		if (fabs(pitch) > stopAng || (pitch - oldpitch > 0.005 && oldpitch > 1) || (pitch - oldpitch < -0.005 && oldpitch < -1)) {
+			drive(speed, speed, 30);
+		}
+		else if (fabs(pitch) > 10) {
+			drive(-speed / 3, -speed / 3, 30);
+		}
+		else {
+			wait(30,msec)
   	oldpitch = pitch;
-  	Brain.Screen.printAt(1, 100, "pitch=   %.3f   ",pitch);
 	}
 	brakeDrive();
 	Brain.Screen.printAt(1, 150, "i am done ");
@@ -563,11 +566,12 @@ NOTE "START ON RED SIDE LEFT";
   driveTo(0.2,-1.8, false, false,0,0,3500); // first value must be experimented witH
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
-  unitDrive(-0.5); // back up to turn ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;g
+  unitDrive(-0.5); // back up to turn
 	liftTo(-10,0); // lower lift
-  driveTo(-0.425, -1.35,true,false,0,0); // drop left red
+  driveTo(-0.425, -1.35); // drop left red
+	gyroturn(-90 - mod(Gyro.rotation(degrees) - 180, 360));
   mogoDeg(-127,0);
-  driveTo(0, -1.35,false,false,0,0);
+  driveTo(0, -1.35);
 	mogoTo(90,0);
 	driveTo(-0.125, 1, true);
 	// RIGHT YELLOW + PLATFORM
@@ -579,7 +583,7 @@ NOTE "START ON RED SIDE LEFT";
 	// RIGHT BLUE
   unitDrive(-0.5);
 	liftTo(-10, 0); // lower lift
-	driveTo(2.45,-1.3, false, true, 3, 3, 5000); // get it. It should not take longer than 5 seconds
+	driveTo(2.45,-1.3, false, true, 3, 3, 4000); // get it. It should not take longer than 5 seconds
   liftTo(70, 0); // raise lift. Less friction
 	// RIGHT RED 
 	driveTo(1.8,1.667,4000);
@@ -592,8 +596,9 @@ NOTE "START ON RED SIDE LEFT";
 	// ALIGN FOR PARKING
   driveTo(2, 1.5, false, false, 0, 0, 3000); // get close. Next thing must be very precise
 	mogoTo(90,0);
-	driveTo(2, 2.5, false, false, 0, 0, 3000); // dont hit the platform.
-	//gyroturn(90 - mod(Gyro.rotation(degrees) - 180, 360)); // point STRAIGHT (I added back gyroturn just for this line xD)
+	driveTo(2, 2.7, false, false, 0, 0, 3000); // dont hit the platform.
+	unitDrive(-3.5 / UNITSIZE); // use wall to align
+	gyroturn(90 - mod(Gyro.rotation(degrees) - 180, 360), 1); // point STRAIGHT (I added back gyroturn just for this line xD)
   NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
   unitDrive(0.4);
   liftTo(0, 0); // bring down the platform. wait till it's done
