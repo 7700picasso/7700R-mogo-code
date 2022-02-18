@@ -318,11 +318,13 @@ void unitDrive(double target, bool endClaw = false, double clawDist = 1, uint32_
 //if gyro needs calibrating add a 10ms wait or something, gyro cal takes about 1.5 sec
 //1 sec if your good
 
+int8_t sgn(double x) {
+	return (x > 0 ? 1 : x < 0 ? -1 : 0);
+}
+
 void balance() { // WIP
   Brain.Screen.clearScreen();
   double Kp = 1.2;
-  double Ki = 0; // back up when we need it
-  double Kd = 60; // we need it to go backwards when it starts tipping the other way.
 	double decay = 0.5; // integral decay
   volatile double speed;
   volatile double pitch = Gyro.pitch(degrees);
@@ -332,17 +334,18 @@ void balance() { // WIP
   while(true) { //(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 0.005) {
   	pitch = Gyro.pitch(degrees);
   	speed = Kp * pitch;
-		if (fabs(pitch) > stopAng || (pitch - oldpitch > 0.005 && oldpitch > 1) || (pitch - oldpitch < -0.005 && oldpitch < -1)) {
+		if (fabs(pitch) > stopAng || (sgn(pitch) == sgn(oldpitch) && sgn(pitch - oldpitch) == sgn(pitch) && sgn(pitch) != 0) { // ensure that pitch, oldpitch, and pitch - oldpitch are both + or both - to make sure it only climbs if its gaining pitch
 			drive(speed, speed, 30);
 		}
-		else if (fabs(pitch) > 10) {
-			drive(-speed / 3, -speed / 3, 30);
+		else if (fabs(pitch) > 10 && sgn(pitch) == sgn(oldpitch)) {
+			drive(-speed / 2.5, -speed / 2.5, 30); // Dont back up too fast.
 		}
 		else {
+			brakeDrive();
 			wait(30,msec)
-  	oldpitch = pitch;
+  		oldpitch = pitch;
+		}
 	}
-	brakeDrive();
 	Brain.Screen.printAt(1, 150, "i am done ");
 }
 
