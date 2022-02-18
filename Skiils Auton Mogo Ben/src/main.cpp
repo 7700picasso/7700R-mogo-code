@@ -507,55 +507,55 @@ void driveTo(double x2, double y2, bool Reverse = false, bool endClaw = false, d
 }
 
 void auton() {
-  NOTE"            R             RRRR            RRRR  RRRRRRRRRRRRRRRRRR       RRRRRRRR       ";
-  NOTE"           RRR            RRRR            RRRR  RRRRRRRRRRRRRRRRRR    RRRRRRRRRRRRRR    ";
-  NOTE"          RRRRR           RRRR            RRRR         RRRR          RRRRR      RRRRR   ";
-  NOTE"         RRRRRRR          RRRR            RRRR         RRRR         RRRR          RRRR  ";
-  NOTE"        RRRR RRRR         RRRR            RRRR         RRRR         RRRR          RRRR  ";
-  NOTE"       RRRR   RRRR        RRRR            RRRR         RRRR         RRRR          RRRR  ";
-  NOTE"      RRRR     RRRR       RRRR            RRRR         RRRR         RRRR          RRRR  ";
-  NOTE"     RRRRRRRRRRRRRRR      RRRR            RRRR         RRRR         RRRR          RRRR  ";
-  NOTE"    RRRRRRRRRRRRRRRRR     RRRR            RRRR         RRRR         RRRR          RRRR  ";
-  NOTE"   RRRR           RRRR     RRRRR        RRRRR          RRRR          RRRRR      RRRRR   ";
-  NOTE"  RRRR             RRRR      RRRRRRRRRRRRRR            RRRR           RRRRRRRRRRRRRR    ";
-  NOTE" RRRR               RRRR        RRRRRRRR               RRRR              RRRRRRRR       ";
+	NOTE"            R             RRRR            RRRR  RRRRRRRRRRRRRRRRRR       RRRRRRRR       ";
+	NOTE"           RRR            RRRR            RRRR  RRRRRRRRRRRRRRRRRR    RRRRRRRRRRRRRR    ";
+	NOTE"          RRRRR           RRRR            RRRR         RRRR          RRRRR      RRRRR   ";
+	NOTE"         RRRRRRR          RRRR            RRRR         RRRR         RRRR          RRRR  ";
+	NOTE"        RRRR RRRR         RRRR            RRRR         RRRR         RRRR          RRRR  ";
+	NOTE"       RRRR   RRRR        RRRR            RRRR         RRRR         RRRR          RRRR  ";
+	NOTE"      RRRR     RRRR       RRRR            RRRR         RRRR         RRRR          RRRR  ";
+	NOTE"     RRRRRRRRRRRRRRR      RRRR            RRRR         RRRR         RRRR          RRRR  ";
+	NOTE"    RRRRRRRRRRRRRRRRR     RRRR            RRRR         RRRR         RRRR          RRRR  ";
+	NOTE"   RRRR           RRRR     RRRRR        RRRRR          RRRR          RRRRR      RRRRR   ";
+	NOTE"  RRRR             RRRR      RRRRRRRRRRRRRR            RRRR           RRRRRRRRRRRRRR    ";
+	NOTE" RRRR               RRRR        RRRRRRRR               RRRR              RRRRRRRR       ";
 
-  backHook.set(false); // bring up back hook to prevent problems
-  picasso.set(false); // un-picasso nothing
+  	backHook.set(false); // bring up back hook to prevent problems
+  	picasso.set(false); // un-picasso nothing
 	claw.set(true); // open claw
 
-  //runningAuto = true;
+	//runningAuto = true;
 
-  while (Gyro.isCalibrating() || GPS.isCalibrating()) { // dont start until gyro and GPS are calibrated
-    wait(10, msec);
-  }
-  Gyro.setRotation(GPS.rotation(degrees), degrees);
-  GPS.setRotation(GPS.rotation(degrees) - 90, degrees);
+	while (Gyro.isCalibrating() || GPS.isCalibrating()) { // dont start until gyro and GPS are calibrated
+		wait(10, msec);
+	}
+	Gyro.setRotation(GPS.rotation(degrees), degrees);
+	GPS.setRotation(GPS.rotation(degrees) - 90, degrees);
 
-NOTE "AUTO PLAN:";
-NOTE "START ON RED SIDE LEFT";
-/*
-  1)  PICASSO LEFT BLUE
-  2)  CLAW LEFT YELLOW
-  3)  MOGO LIFT LEFT RED 
-  4)  PLATFORM LEFT YELLOW 
-  5)  DROP LEFT RED ON RED SIDE
-  6)  SHOVE TALL YELLOW TO BLUE WITH MOGO LIFT
-  7)  CLAW + PLATFORM RIGHT YELLOW
-  8)  CLAW RIGHT BLUE
-  9)  MOGO LIFT RIGHT RED + BRING IT TO RED SIDE 
-  10) PARK ON BLUE SIDE
-*/
+	NOTE "AUTO PLAN:";
+	NOTE "START ON RED SIDE LEFT";
+	/*
+	  1)  PICASSO LEFT BLUE
+	  2)  CLAW LEFT YELLOW
+	  3)  MOGO LIFT LEFT RED 
+	  4)  PLATFORM LEFT YELLOW 
+	  5)  DROP LEFT RED ON RED SIDE
+	  6)  SHOVE TALL YELLOW TO BLUE WITH MOGO LIFT
+	  7)  CLAW + PLATFORM RIGHT YELLOW
+	  8)  CLAW RIGHT BLUE
+	  9)  MOGO LIFT RIGHT RED + BRING IT TO RED SIDE 
+  	  10) PARK ON BLUE SIDE
+	*/
 
-  // LEFT BLUE
-  brakeDrive(); // set motors to brake
-  mogoTime(-100, 600, false); // lower amogus for 750 msec
-  liftTime(-50, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
-  amogus.setPosition(0, degrees);
-  lift1.setPosition(0, degrees);
-  unitDrive(-17 / UNITSIZE); // scoop up mogo
-  mogoDeg(120, 375);
-  unitDrive(6 / UNITSIZE);
+  	// LEFT BLUE
+ 	brakeDrive(); // set motors to brake
+  	mogoTime(-100, 600, false); // lower amogus for 750 msec
+  	liftTime(-50, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
+  	amogus.setPosition(0, degrees);
+  	lift1.setPosition(0, degrees);
+  	unitDrive(-17 / UNITSIZE); // scoop up mogo
+  	mogoDeg(120, 375);
+  	unitDrive(6 / UNITSIZE);
 	// LEFT YELLOW
 	driveTo(-1.31,0,false,true,5); // grab it
 	picasso.set(true); // picasso that mogo
@@ -563,18 +563,18 @@ NOTE "START ON RED SIDE LEFT";
 	liftTo(75,0);
 	// LEFT RED
 	driveTo(-1.4,1.6);
-  driveTo(-2.4,1.7,true,false,0,0,2000);
+  	driveTo(-2.4,1.7,true,false,0,0,2000);
 	mogoTo(60, 375);
 	// PLATFORM LEFT YELLOW
-  driveTo(0.2,-1.8, false, false,0,0,3500); // first value must be experimented witH
+  	driveTo(0.2,-1.8, false, false,0,0,3500); // first value must be experimented witH
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
-  unitDrive(-0.5); // back up to turn
+  	unitDrive(-0.5); // back up to turn
 	liftTo(-10,0); // lower lift
-  driveTo(-0.425, -1.35); // drop left red
-	gyroturn(-90 - mod(Gyro.rotation(degrees) - 180, 360));
-  mogoDeg(-127,0);
-  driveTo(0, -1.35);
+  	driveTo(-0.425, -1.35); // drop left red
+  	gyroturn(-90 - mod(Gyro.rotation(degrees) - 180, 360));
+  	mogoDeg(-127, 400);
+  	driveTo(0, -1.35);
 	mogoTo(90,0);
 	driveTo(-0.125, 1, true);
 	// RIGHT YELLOW + PLATFORM
@@ -582,12 +582,12 @@ NOTE "START ON RED SIDE LEFT";
 	liftTo(80, 0); // raise lift
 	driveTo(0.9,-2,false, false, 0, 0, 3000); // go to platform
 	Claw(true); // drop it
-  lift1.stop(hold);
+  	lift1.stop(hold);
 	// RIGHT BLUE
-  unitDrive(-0.5);
+  	unitDrive(-0.5);
 	liftTo(-10, 0); // lower lift
 	driveTo(2.45,-1.3, false, true, 3, 3, 4000); // get it. It should not take longer than 5 seconds
-  liftTo(70, 0); // raise lift. Less friction
+  	liftTo(70, 0); // raise lift. Less friction
 	// RIGHT RED 
 	driveTo(1.8,1.667,4000);
 	mogoDeg(-130,375); // lower amogus
@@ -595,27 +595,25 @@ NOTE "START ON RED SIDE LEFT";
 	mogoTo(45, 375); // lift amogus
 	unitDrive(0.5); // back up from the back so go forward.
 	driveTo(1.667,-1,true); // bring to other side
-	mogoDeg(-130, 375); // lower amogus
+	mogoDeg(-60, 375); // lower amogus to drop it
 	// ALIGN FOR PARKING
-  driveTo(2, 1.5, false, false, 0, 0, 3000); // get close. Next thing must be very precise
+  	driveTo(2, 1.5, false, false, 0, 0, 3000); // get close. Next thing must be very precise
 	mogoTo(90,0);
 	driveTo(2, 2.7, false, false, 0, 0, 3000); // dont hit the platform.
 	unitDrive(-3.5 / UNITSIZE); // use wall to align
 	gyroturn(90 - mod(Gyro.rotation(degrees) - 180, 360), 1); // point STRAIGHT (I added back gyroturn just for this line xD)
-  NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
-  unitDrive(0.4);
-  liftTo(0, 0); // bring down the platform. wait till it's done
-  uint32_t startTime = vex::timer::system();
-  while (lift1.position(degrees) > 45 && vex::timer::system() - startTime < 2667) { // wait until lift is all the way down. but dont wait for too long or too short.
-    wait(10, msec);
-  }
+ 	NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
+	unitDrive(0.4);
+  	liftTo(0, 0); // bring down the platform. wait till it's done
+  	uint32_t startTime = vex::timer::system();
+  	while (lift1.position(degrees) > 45 && vex::timer::system() - startTime < 2667) { // wait until lift is all the way down. but dont wait for too long or too short.
+    		wait(10, msec);
+  	}
 	lift1.spin(forward, 0, percent); // allow lift to get shoved a bit up.
-  // PARK
-
-  //unitDrive(29 / UNITSIZE); // goes to about the middle of the platform... I think
-  unitDrive(45 / UNITSIZE); // umm is this too much cus it more than last time
-  wait(750,msec); // wait before continuing
-  balance(); // just in case its not balanced. I hope this works.*/
+  	// PARK
+  	unitDrive(45 / UNITSIZE); // hopefully goes to the middle
+  	wait(750,msec); // wait before continuing
+  	balance(); // just in case its not balanced. I hope this works.
 }
 
 //driver controls,dont change unless your jaehoon or sean
