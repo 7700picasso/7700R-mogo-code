@@ -300,12 +300,11 @@ void auton() {
   inchDrive(-33); // get the mogo that was dropped.
   mogo(60, 375); // pikkup that mogo
   // MID
-  "BELOW THIS LINE NEEDS FINE TUNING";
   inchDrive(15); // AVOID RINGS
-  gyroturn(-140,facing); // face mid (i think)
-  inchDrive(35); // get mid... I think
+  gyroturn(-137,facing); // face mid (i think)
+  inchDrive(39); // get mid... I think
   claw.set(false);
-  inchDrive(-40);
+  inchDrive(-44);
 }
 
 //driver controls,dont change unless your jaehoon or sean

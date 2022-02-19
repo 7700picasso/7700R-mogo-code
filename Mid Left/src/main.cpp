@@ -287,7 +287,7 @@ void auton() {
   liftDeg(10,0);// RAISE LIFT BY 10° TO REDUCE FRICTION
   // SIDE
   gyroturn(45, facing); // FACE SIDE WITH MOGO LIFT
-  inchDrive(-36, 0); // GET MOGO INTO MOGO LIFT
+  inchDrive(-40, 0); // GET MOGO INTO MOGO LIFT
   mogoDeg(60, 750); // RAISE MOGO LIFT
   // GO HOME & DROP SIDE
   gyroturn(90, facing); // FACE HOMEZONE

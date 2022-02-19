@@ -297,7 +297,7 @@ void auton() {
   inchDrive(-50.91 + mogoStopDist, 0); // ALIGN WITH ALLIANCE GOAL ON Y-AXIS.
   gyroturn(-45, facing); // FACE ALLIANCE GOAL
   inchDrive(-15); // GET IT IN MOGO LIFT
-  mogo(130,1000); // BRING THAT MOGO INTO PICASSO
+  mogo(130,1300); // BRING THAT MOGO INTO PICASSO
   picasso.set(true); // PICASSO THAT MOGO
   // SIDE
   mogo(-140,0); // START LOWERING MOGO LIFT
