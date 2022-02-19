@@ -276,20 +276,21 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
 void auton() {
   claw.set(true); // open claw
   picasso.set(false); // open picasso
+  backhooks(false); // raise hook so it doesn't get in the way
   while (Gyro.isCalibrating()) {
     wait(10,msec);
   }
   Gyro.setRotation(0,degrees);
 
   double facing = 0;
-  
-  
-  "AUTO NUMBER 2:";
-  "MID-PICASSO-SIDE";
-  "START IN THE CORNER FACING MID. CENTER OF ROBOT SHOULD BE ON CENTER OF TILE";
+  /*
+  AUTO NUMBER 2
+  MID-PICASSO-SIDE
+  START IN THE CORNER FACING MID. CENTER OF ROBOT SHOULD BE ON CENTER OF TILE
+  */
   double mogoStopDist = 6; // STOP THIS MANY UNITS BEFORE A MOGO. FEEL FREE TO CHANGE
   // MID
-  inchDrive(84.85 - mogoStopDist, 8); // GO TO MID and LOWER MOGO LIFT.
+  inchDrive(84.85 - mogoStopDist, 6); // GO TO MID and LOWER MOGO LIFT.
   claw.set(false); // CLAW IT
   lift(10, 0); // RAISE LIFT BY 10° TO REDUCE FRICTION
   // PICASSO
@@ -303,10 +304,9 @@ void auton() {
   inchDrive(15); // GO BACK TO WHEREVER IT WAS B4 THE LINE THAT SAYS "GET IT IN MOGO LIFT" FROM SECTION "PICASSO"
   gyroturn(-90, facing); // FACE MOGO LIFT TO SIDE GOAL
   inchDrive(-36 + mogoStopDist); // GET MOGO IN LIFT
-  mogo(60,500); // RAISE MOGO LIFT BY 60°
+  mogo(60, 500); // RAISE MOGO LIFT BY 60°
   inchDrive(50); // RETURN TO HOME ZONE
-  brakeDrive();
-
+  gyroturn(135,facing);
 }
 
 //driver controls,dont change unless your jaehoon or sean

@@ -325,27 +325,28 @@ int8_t sgn(double x) {
 void balance() { // WIP
   Brain.Screen.clearScreen();
   double Kp = 1.2;
-	double decay = 0.5; // integral decay
   volatile double speed;
   volatile double pitch = Gyro.pitch(degrees);
   volatile double oldpitch = pitch;
 
   double stopAng = 20; // stop when fabs(pitch) is at most 5° and when its no longer tipping back and forth.
-  while(true) { //(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 0.005) {
+  while (true) { //(fabs(pitch) > stopAng || fabs(pitch - oldpitch) > 0.005) {
   	pitch = Gyro.pitch(degrees);
   	speed = Kp * pitch;
-		if (fabs(pitch) > stopAng || (sgn(pitch) == sgn(oldpitch) && sgn(pitch - oldpitch) == sgn(pitch) && sgn(pitch) != 0) { // ensure that pitch, oldpitch, and pitch - oldpitch are both + or both - to make sure it only climbs if its gaining pitch
+    bool sameDir = sgn(pitch) == sgn(oldpitch);
+		if (fabs(pitch) > stopAng || (sameDir && sgn(pitch - oldpitch) == sgn(pitch) && fabs(pitch) > 3)) { // ensure that pitch, oldpitch, and pitch - oldpitch are both + or both - to make sure it only climbs if its gaining pitch
 			drive(speed, speed, 30);
 		}
-		else if (fabs(pitch) > 10 && sgn(pitch) == sgn(oldpitch)) {
-			drive(-speed / 2.5, -speed / 2.5, 30); // Dont back up too fast.
+		else if (fabs(pitch) > 12 && sameDir) {
+			drive(-speed / 2, -speed / 2, 30); // Dont back up too fast. This is basically 6% speed for like 1 second
 		}
 		else {
 			brakeDrive();
-			wait(30,msec)
+			wait(30, msec);
   		oldpitch = pitch;
 		}
 	}
+
 	Brain.Screen.printAt(1, 150, "i am done ");
 }
 
@@ -520,8 +521,8 @@ void auton() {
 	NOTE"  RRRR             RRRR      RRRRRRRRRRRRRR            RRRR           RRRRRRRRRRRRRR    ";
 	NOTE" RRRR               RRRR        RRRRRRRR               RRRR              RRRRRRRR       ";
 
-  	backHook.set(false); // bring up back hook to prevent problems
-  	picasso.set(false); // un-picasso nothing
+  backHook.set(false); // bring up back hook to prevent problems
+  picasso.set(false); // un-picasso nothing
 	claw.set(true); // open claw
 
 	//runningAuto = true;
@@ -544,18 +545,18 @@ void auton() {
 	  7)  CLAW + PLATFORM RIGHT YELLOW
 	  8)  CLAW RIGHT BLUE
 	  9)  MOGO LIFT RIGHT RED + BRING IT TO RED SIDE 
-  	  10) PARK ON BLUE SIDE
+  	10) PARK ON BLUE SIDE
 	*/
 
-  	// LEFT BLUE
+  // LEFT BLUE
  	brakeDrive(); // set motors to brake
-  	mogoTime(-100, 600, false); // lower amogus for 750 msec
-  	liftTime(-50, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
-  	amogus.setPosition(0, degrees);
-  	lift1.setPosition(0, degrees);
-  	unitDrive(-17 / UNITSIZE); // scoop up mogo
-  	mogoDeg(120, 375);
-  	unitDrive(6 / UNITSIZE);
+  mogoTime(-100, 600, false); // lower amogus for 750 msec
+  liftTime(-50, 150, false); // lower lift just because it might not be all the way down but not too fast bc we dont want to break it; completes the 750 msec wait
+  amogus.setPosition(0, degrees);
+  lift1.setPosition(0, degrees);
+  unitDrive(-17 / UNITSIZE); // scoop up mogo
+  mogoDeg(120, 375);
+  unitDrive(6 / UNITSIZE);
 	// LEFT YELLOW
 	driveTo(-1.31,0,false,true,5); // grab it
 	picasso.set(true); // picasso that mogo
@@ -563,18 +564,18 @@ void auton() {
 	liftTo(75,0);
 	// LEFT RED
 	driveTo(-1.4,1.6);
-  	driveTo(-2.4,1.7,true,false,0,0,2000);
+  driveTo(-2.4,1.7,true,false,0,0,2000);
 	mogoTo(60, 375);
 	// PLATFORM LEFT YELLOW
-  	driveTo(0.2,-1.8, false, false,0,0,3500); // first value must be experimented witH
+  driveTo(0.2,-1.8, false, false,0,0,3500); // first value must be experimented witH
 	Claw(true); // drop it
 	// SHOVE TALL MOGO TO OTHER SIDE
-  	unitDrive(-0.5); // back up to turn
+  unitDrive(-0.5); // back up to turn
 	liftTo(-10,0); // lower lift
-  	driveTo(-0.425, -1.35); // drop left red
-  	gyroturn(-90 - mod(Gyro.rotation(degrees) - 180, 360));
-  	mogoDeg(-127, 400);
-  	driveTo(0, -1.35);
+  driveTo(-0.425, -1.35); // drop left red
+  gyroturn(-90 - mod(Gyro.rotation(degrees) - 180, 360));
+  mogoDeg(-127, 400);
+  driveTo(0, -1.35);
 	mogoTo(90,0);
 	driveTo(-0.125, 1, true);
 	// RIGHT YELLOW + PLATFORM
@@ -582,12 +583,12 @@ void auton() {
 	liftTo(80, 0); // raise lift
 	driveTo(0.9,-2,false, false, 0, 0, 3000); // go to platform
 	Claw(true); // drop it
-  	lift1.stop(hold);
+  lift1.stop(hold);
 	// RIGHT BLUE
-  	unitDrive(-0.5);
+  unitDrive(-0.5);
 	liftTo(-10, 0); // lower lift
 	driveTo(2.45,-1.3, false, true, 3, 3, 4000); // get it. It should not take longer than 5 seconds
-  	liftTo(70, 0); // raise lift. Less friction
+  liftTo(70, 0); // raise lift. Less friction
 	// RIGHT RED 
 	driveTo(1.8,1.667,4000);
 	mogoDeg(-130,375); // lower amogus
@@ -597,23 +598,23 @@ void auton() {
 	driveTo(1.667,-1,true); // bring to other side
 	mogoDeg(-60, 375); // lower amogus to drop it
 	// ALIGN FOR PARKING
-  	driveTo(2, 1.5, false, false, 0, 0, 3000); // get close. Next thing must be very precise
+  driveTo(2, 1.5, false, false, 0, 0, 3000); // get close. Next thing must be very precise
 	mogoTo(90,0);
 	driveTo(2, 2.7, false, false, 0, 0, 3000); // dont hit the platform.
 	unitDrive(-3.5 / UNITSIZE); // use wall to align
 	gyroturn(90 - mod(Gyro.rotation(degrees) - 180, 360), 1); // point STRAIGHT (I added back gyroturn just for this line xD)
  	NOTE"🅸🆂🆂🆄🅴🆂 🆂🆃🅰🆁🆃 🅷🅴🆁🅴";
 	unitDrive(0.4);
-  	liftTo(0, 0); // bring down the platform. wait till it's done
-  	uint32_t startTime = vex::timer::system();
-  	while (lift1.position(degrees) > 45 && vex::timer::system() - startTime < 2667) { // wait until lift is all the way down. but dont wait for too long or too short.
-    		wait(10, msec);
-  	}
+  liftTo(-10, 0); // bring down the platform. wait till it's done
+  uint32_t startTime = vex::timer::system();
+  while (lift1.position(degrees) > 45 && vex::timer::system() - startTime < 2667) { // wait until lift is all the way down. but dont wait for too long or too short.
+    wait(10, msec);
+  }
 	lift1.spin(forward, 0, percent); // allow lift to get shoved a bit up.
-  	// PARK
-  	unitDrive(45 / UNITSIZE); // hopefully goes to the middle
-  	wait(750,msec); // wait before continuing
-  	balance(); // just in case its not balanced. I hope this works.
+  // PARK
+  unitDrive(45 / UNITSIZE); // hopefully goes to the middle
+  wait(750,msec); // wait before continuing
+  balance(); // just in case its not balanced. I hope this works.
 }
 
 //driver controls,dont change unless your jaehoon or sean

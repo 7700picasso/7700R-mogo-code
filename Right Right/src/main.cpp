@@ -286,9 +286,7 @@ void auton() {
   "AUTO NUMBER 1";
   "SIDE-PICASSO-MID";
   // SIDE
-  inchDrive(55, 6); //go forward 55 inches, lower lift at 6
-  Brain.Screen.clearScreen();//clearscreen,because data and shit from before,mainly for trobleshooting
-  Brain.Screen.print("I'm dumb");//this shows the code works 
+  inchDrive(55, 6); //go forward 55 inches, lower lift at 6 inches
   claw.set(false);//close claw,just picked up that yellow mogo
   inchDrive(-30,0);//go backwards 30 inches
   gyroturn(-90, facing); //turn 90 degress with the robots back facing the right side mogo
@@ -304,13 +302,10 @@ void auton() {
   // MID
   "BELOW THIS LINE NEEDS FINE TUNING";
   inchDrive(15); // AVOID RINGS
-  gyroturn(-135,facing); // face mid (i think)
+  gyroturn(-140,facing); // face mid (i think)
   inchDrive(35); // get mid... I think
   claw.set(false);
-  inchDrive(-35);
-brakeDrive();
-  // END
- 
+  inchDrive(-40);
 }
 
 //driver controls,dont change unless your jaehoon or sean

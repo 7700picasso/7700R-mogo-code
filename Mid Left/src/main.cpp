@@ -266,7 +266,7 @@ void auton() {
   // THIS STUFF BEFORE THE LINE THAT SAYS "AUTO 1" NEEDS TO GO BEFORE BOTH AUTOS.
   claw.set(true); // open claw
   picasso.set(false); // open picasso
-    backhooks(false); // raise hook so it doesn't get in the way
+  backhooks(false); // raise hook so it doesn't get in the way
   
   while (Gyro.isCalibrating()) {
     wait(10,msec);
@@ -276,17 +276,19 @@ void auton() {
   double facing = 0;
   double mogoStopDist = 6; // STOP THIS MANY UNITS BEFORE A MOGO. FEEL FREE TO CHANGE
   
-  "AUTO 2:";
-  "MID-SIDE";
-  "START IN THE CORNER, CLAW FACING MID. CENTER OF ROBOT SHOULD BE IN THE CENTER OF THE TILE";
+  /*
+  AUTO 2
+  MID-SIDE
+  START IN THE CORNER, CLAW FACING MID. CENTER OF ROBOT SHOULD BE IN THE CENTER OF THE TILE
+  */
   // MID
-  inchDrive(84.85, 6); // GO TO MID and LOWER MOGO LIFT
+  inchDrive(84.85 - mogoStopDist, 6); // GO TO MID and LOWER MOGO LIFT
   claw.set(false); // CLAW IT
   liftDeg(10,0);// RAISE LIFT BY 10° TO REDUCE FRICTION
   // SIDE
   gyroturn(45, facing); // FACE SIDE WITH MOGO LIFT
-  inchDrive(-36); // GET MOGO INTO MOGO LIFT
-  mogoDeg(60, 500); // RAISE MOGO LIFT
+  inchDrive(-36, 0); // GET MOGO INTO MOGO LIFT
+  mogoDeg(60, 750); // RAISE MOGO LIFT
   // GO HOME & DROP SIDE
   gyroturn(90, facing); // FACE HOMEZONE
   inchDrive(36); // GO INTO HOMEZONE
@@ -295,8 +297,6 @@ void auton() {
   inchDrive(-10); // BACK UP TO DROP MOGO IN A BETTER PLACE
   inchDrive(10); // FINISH DROPPING MOGO
   gyroturn(-90,facing); // point kinda towards alliance goal
-  brakeDrive();
-
 }
 
 //driver controls,dont change unless your jaehoon or sean
