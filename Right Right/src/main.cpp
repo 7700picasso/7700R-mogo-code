@@ -301,7 +301,7 @@ void auton() {
   mogo(60, 375); // pikkup that mogo
   // MID
   inchDrive(15); // AVOID RINGS
-  gyroturn(-137,facing); // face mid (i think)
+  gyroturn(-135,facing); // face mid (i think)
   inchDrive(39); // get mid... I think
   claw.set(false);
   inchDrive(-44);

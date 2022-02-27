@@ -51,6 +51,10 @@ bool isDriver = false;
 
 void pre_auton(void) {
   vexcodeInit();
+  Gyro.calibrate();
+  claw.set(true);
+  backHook.set(false);
+  picasso.set(false);
   wait(2000, msec);
 
   // All activities that occur before the competition starts
@@ -265,16 +269,16 @@ void gyroturn(double target, double &idealDir) { // idk maybe turns the robot wi
 //wow maybe the auton code,this auton is the left side auton,works well
 void auton() {
   // THIS STUFF BEFORE THE LINE THAT SAYS "AUTO 1" NEEDS TO GO BEFORE BOTH AUTOS.
-  claw.set(true); // open claw
+  /*claw.set(true); // open claw
   picasso.set(false); // open picasso
-    backhooks(false); // raise hook so it doesn't get in the way
-  
+  backhooks(false); // raise hook so it doesn't get in the way
+  */
   while (Gyro.isCalibrating()) {
     wait(10,msec);
   }
-  Gyro.setRotation(0,degrees);
+  Gyro.setRotation(11.3,degrees);
 
-  double facing = 0;
+  double facing = 11.3;
   double mogoStopDist = 6; // STOP THIS MANY UNITS BEFORE A MOGO. FEEL FREE TO CHANGE
   "AUTO 1";
   "SIDE-PICASSO";
@@ -284,20 +288,19 @@ void auton() {
   claw.set(false); // CLAW IT
   // PICASSO
   // WE WILL APPROACH THIS FROM THE DIAGONAL.
-  inchDrive(-36.714 + mogoStopDist,0);// GO TO THE DIAGONAL OF APPROACH. LOWER MOGO LIFT.
-  gyroturn(-30-11.3, facing); // POINT MOGO LIFT AT THE ALLIANCE GOAL. change the 30.
+  inchDrive(-40.714 + mogoStopDist, 0);// GO TO THE DIAGONAL OF APPROACH. LOWER MOGO LIFT.
+  gyroturn(-25 - Gyro.rotation(degrees), facing); // POINT MOGO LIFT AT THE ALLIANCE GOAL. change the 30.
   claw.set(true); // DROP SIDE
   inchDrive(-20, 0); // GET MOGO INTO MOGO LIFT.
-  mogoDeg(130,1000); // BRING GOAL INTO PICASSO.
+  mogoDeg(130,1300); // BRING GOAL INTO PICASSO.
   picasso.set(true); // PICASSO IT.
   // GET SIDE BUT WITH MOGO LIFT
   gyroturn(180,facing); // FACE IT
-  mogoDeg(-140,750); // LOWER MOGO LIFT
+  mogoDeg(-140, 1000); // LOWER MOGO LIFT
   inchDrive(-24); // GET MOGO INTO LIFT
   mogoDeg(60,500); // RAISE LIFT
+  wait(300,msec);
   gyroturn(-90,facing); // FACE MID
-brakeDrive();
-  
 }
 
 //driver controls,dont change unless your jaehoon or sean

@@ -164,7 +164,7 @@ void picassos (bool open) {
 //picasso.set(true);     open
 //picasso.set(false);    close
 
-void inchDrive(double target, double lowerDist = 100000, double accuracy = 1) {
+void inchDrive(double target, double lowerDist = 100000, double liftSpeed = -100, double accuracy = 1) {
   leftDrive1.setPosition(0,  rev);
   leftDrive2.setPosition(0,  rev); // might only need 1 of 3 of these but im a dumbass so leave it 
   leftmiddle.setPosition(0,  rev);
@@ -197,8 +197,8 @@ void inchDrive(double target, double lowerDist = 100000, double accuracy = 1) {
     speed = Kp * error + Ki * decay + Kd * (error - olderror); // big error go fast slow error go slow 
     drive(speed, speed, 10);
     olderror = error;
-    if (target - error > lowerDist) {
-      amogus.spin(forward,-100,percent);
+    if (fabs(target - error) > fabs(lowerDist)) {
+      amogus.spin(forward,liftSpeed,percent);
     }
   }
   brakeDrive();
@@ -294,19 +294,19 @@ void auton() {
   claw.set(false); // CLAW IT
   lift(10, 0); // RAISE LIFT BY 10° TO REDUCE FRICTION
   // PICASSO
-  inchDrive(-50.91 + mogoStopDist, 0); // ALIGN WITH ALLIANCE GOAL ON Y-AXIS.
+  inchDrive(-50.91 + mogoStopDist-3, 0); // ALIGN WITH ALLIANCE GOAL ON Y-AXIS.
   gyroturn(-45, facing); // FACE ALLIANCE GOAL
   inchDrive(-15); // GET IT IN MOGO LIFT
   mogo(130,1300); // BRING THAT MOGO INTO PICASSO
   picasso.set(true); // PICASSO THAT MOGO
   // SIDE
   mogo(-140,0); // START LOWERING MOGO LIFT
-  inchDrive(15); // GO BACK TO WHEREVER IT WAS B4 THE LINE THAT SAYS "GET IT IN MOGO LIFT" FROM SECTION "PICASSO"
+  inchDrive(13.5); // GO BACK TO WHEREVER IT WAS B4 THE LINE THAT SAYS "GET IT IN MOGO LIFT" FROM SECTION "PICASSO"
   gyroturn(-90, facing); // FACE MOGO LIFT TO SIDE GOAL
-  inchDrive(-36 + mogoStopDist); // GET MOGO IN LIFT
-  mogo(60, 500); // RAISE MOGO LIFT BY 60°
+  inchDrive(-40, -30, 100); // GET MOGO IN LIFT
+  mogo(60, 750); // RAISE MOGO LIFT BY 60°
+  wait(300,msec);
   inchDrive(50); // RETURN TO HOME ZONE
-  gyroturn(135,facing);
 }
 
 //driver controls,dont change unless your jaehoon or sean
